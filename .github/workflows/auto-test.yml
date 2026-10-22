@@ -1,13 +1,19 @@
 name: Auto Test
 
+# This is a private fork used to build the custom image. Upstream runs the full
+# matrix on every push, which costs ~43 billable minutes per commit (13 jobs,
+# four operating systems, three Node versions). Here the push trigger is gone:
+# tests run on pull requests and on demand, and plain pushes only run the
+# linters. Use "Run workflow" (or push a branch and open a PR) when a full run
+# is needed.
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-server
   cancel-in-progress: true
 
 on:
-  push:
-    branches: [master, 1.23.X, 3.0.0]
   pull_request:
+  workflow_dispatch:
 permissions: {}
 
 jobs:
@@ -19,13 +25,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-22.04, windows-latest, ubuntu-22.04-arm]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-        node: [20, 24]
-        # Also test non-LTS, but only on Ubuntu.
-        include:
-          - os: ubuntu-22.04
-            node: 25
+        # Windows and macOS runners cost 2x and 10x the Linux rate and gave no
+        # extra coverage for a Linux-only deployment; Node 25 is a non-LTS
+        # extra run that doubled the slowest leg. Node 22 matches the runner
+        # used by build-custom-image.yml.
+        os: [ubuntu-22.04]
+        node: [22, 24]
 
     steps:
       - run: git config --global core.autocrlf false # Mainly for Windows
@@ -53,10 +58,8 @@ jobs:
 
       - run: npm clean-install --no-fund
 
-      - name: Rebuild native modules for ARM64
-        if: matrix.os == 'ubuntu-22.04-arm'
-        run: npm rebuild @louislam/sqlite3
-
+      # (The ARM64 native-module rebuild is gone together with the
+      # ubuntu-22.04-arm matrix entry.)
       - run: npm run build
       - run: npm run test-backend
         env:
@@ -95,6 +98,14 @@ jobs:
             npm clean-install --no-fund --production
 
   check-linters:
+    # Lint only when sources could have changed; docs-only pushes are cheap.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
+      contains(toJSON(github.event.commits.*.modified), 'src/') ||
+      contains(toJSON(github.event.commits.*.modified), 'server/') ||
+      contains(toJSON(github.event.commits.*.added), 'src/') ||
+      contains(toJSON(github.event.commits.*.added), 'server/')
     runs-on: ubuntu-latest
     permissions:
       contents: read

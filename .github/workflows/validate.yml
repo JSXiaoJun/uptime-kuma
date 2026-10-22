@@ -29,6 +29,16 @@ jobs:
 
   # General validations
   validate:
+    # Same reasoning as the linters in auto-test.yml: these checks only look at
+    # checked-in sources, so skip them for docs-only pushes.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
+      contains(toJSON(github.event.commits.*.modified), 'src/') ||
+      contains(toJSON(github.event.commits.*.modified), 'server/') ||
+      contains(toJSON(github.event.commits.*.modified), 'extra/') ||
+      contains(toJSON(github.event.commits.*.modified), 'db/') ||
+      contains(toJSON(github.event.commits.*.modified), 'package.json')
     runs-on: ubuntu-latest
     permissions:
       contents: read

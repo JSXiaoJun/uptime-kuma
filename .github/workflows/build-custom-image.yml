@@ -9,6 +9,10 @@ name: Build and Publish Docker Image
 #
 # Pull it on the server with:
 #   docker pull ghcr.io/<owner>/<repo>:latest
+#
+# Only paths that end up inside the image trigger a build. Docs-only or
+# CI-only pushes (AGENTS.md, .github/, tmp/, ...) skip this workflow; use
+# "Run workflow" when an image is needed anyway.
 
 on:
   push:
@@ -16,6 +20,21 @@ on:
       - master
     tags:
       - "v*"
+    paths:
+      - "server/**"
+      - "src/**"
+      - "db/**"
+      - "docker/**"
+      - "extra/**"
+      - "public/**"
+      - "config/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - ".npmrc"
+      - "tsconfig.json"
+      - "tsconfig-backend.json"
+      - "ecosystem.config.js"
   workflow_dispatch:
 
 env:
