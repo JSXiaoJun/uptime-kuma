@@ -23,7 +23,7 @@
                 -->
                 <div class="sidebar-stack">
                     <div class="monitor-slot">
-                        <MonitorList :scrollbar="true" />
+                        <MonitorList :scrollbar="true" class="sidebar-monitor-box" />
                     </div>
 
                     <div v-if="lines.length > 0" class="line-slot">
@@ -106,20 +106,24 @@ export default {
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
-
-    /*
-     * MonitorList hard-codes calc(100vh - 160px); constrain it to the space the
-     * flex layout actually gives it so it never covers the line cards.
-     */
-    :deep(> .shadow-box) {
-        height: 100% !important;
-        margin-bottom: 0 !important;
-    }
 }
 
 .line-slot {
     flex: 0 0 auto;
     max-height: 45%;
     overflow-y: auto;
+}
+</style>
+
+<!--
+    MonitorList sizes its root box with calc(100vh - 160px), which fills the
+    viewport and pushes the line cards out of view. The class below is merged
+    onto that root element and constrained here (a plain global rule avoids the
+    ::v-deep / :deep syntax that this project's stylelint config rejects).
+-->
+<style lang="scss">
+.monitor-slot .sidebar-monitor-box {
+    height: 100% !important;
+    margin-bottom: 0 !important;
 }
 </style>
