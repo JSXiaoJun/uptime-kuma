@@ -24,3 +24,6 @@ extra/exe-builder/obj
 
 .vs
 .vscode
+
+# temporary commit message files
+commit-msg*.txt
