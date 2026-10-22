@@ -1043,6 +1043,20 @@ export default {
     },
     methods: {
         /**
+         * Load every configured line so the editor can attach them to groups.
+         * @returns {void}
+         */
+        loadAllLineStatusList() {
+            if (!this.$root.loggedIn) {
+                return;
+            }
+            this.$root.socket.emit("getLineStatusList", (res) => {
+                if (res.ok) {
+                    this.$root.allLineStatusList = res.data;
+                }
+            });
+        },
+        /**
          * Get status page data
          * It should be preloaded in window.preloadData
          * @returns {Promise<any>} Status page data
@@ -1139,6 +1153,9 @@ export default {
 
                 // Try to fix #1658
                 this.loadedData = true;
+
+                // Load lines so they can be attached to groups while editing.
+                this.loadAllLineStatusList();
             }
         },
 

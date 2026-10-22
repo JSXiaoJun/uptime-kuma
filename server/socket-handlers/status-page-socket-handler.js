@@ -393,6 +393,20 @@ module.exports.statusPageSocketHandler = (socket) => {
                     await R.store(relationBean);
                 }
 
+                // Lines assigned to this group (line status feature).
+                await R.exec("DELETE FROM group_line WHERE group_id = ? ", [groupBean.id]);
+
+                const lineList = Array.isArray(group.lineList) ? group.lineList : [];
+                let lineOrder = 1;
+
+                for (const line of lineList) {
+                    const relationBean = R.dispense("group_line");
+                    relationBean.weight = lineOrder++;
+                    relationBean.group_id = groupBean.id;
+                    relationBean.line_id = line.id;
+                    await R.store(relationBean);
+                }
+
                 groupIDList.push(groupBean.id);
                 group.id = groupBean.id;
             }

@@ -1,4 +1,4 @@
-let express = require("express");
+﻿let express = require("express");
 const {
     allowDevAllOrigin,
     allowAllOrigin,
@@ -617,6 +617,42 @@ function determineStatus(status, previousHeartbeat, maxretries, isUpsideDown, be
         }
     }
 }
+
+/**
+ * Public, read-only snapshot of every line that is assigned to at least one
+ * public status page group. Mirrors what visitors already see on the status
+ * page, so nothing private is exposed.
+ */
+router.get("/api/line-status", async (request, response) => {
+    allowAllOrigin(response);
+
+    try {
+        const LineStatus = require("../model/line_status");
+        const rows = await R.getAll(`
+            SELECT DISTINCT line_status.id FROM line_status, group_line, \`group\`
+            WHERE line_status.id = group_line.line_id
+              AND group_line.group_id = \`group\`.id
+              AND \`group\`.public = 1
+              AND line_status.enabled = 1
+        `);
+
+        const result = [];
+        for (const row of rows) {
+            const line = await LineStatus.findById(row.id);
+            if (line) {
+                result.push(line.toPublicJSON());
+            }
+        }
+
+        response.json({
+            lines: result,
+            updatedAt: dayjs.utc().toISOString(),
+        });
+    } catch (e) {
+        log.error("line-status", `Failed to build public line status: ${e.message}`);
+        sendHttpError(response, e);
+    }
+});
 
 /**
  * Check whether a monitor is publc

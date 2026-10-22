@@ -178,6 +178,11 @@ export default {
                 this.notificationList = data;
             });
 
+            socket.on("lineStatusList", (data) => {
+                this.allLineStatusList = data;
+                this.emitter.emit("lineStatusList", data);
+            });
+
             socket.on("statusPageList", (data) => {
                 this.statusPageListLoaded = true;
                 this.statusPageList = data;

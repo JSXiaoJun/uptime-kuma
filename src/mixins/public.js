@@ -14,6 +14,9 @@ export default {
     data() {
         return {
             publicGroupList: [],
+            // Every configured line, used by the status page editor to let the
+            // operator attach lines to a group. Populated on demand.
+            allLineStatusList: [],
         };
     },
     computed: {
@@ -23,6 +26,20 @@ export default {
             for (let group of this.publicGroupList) {
                 for (let monitor of group.monitorList) {
                     result[monitor.id] = monitor;
+                }
+            }
+            return result;
+        },
+
+        /**
+         * Lines visible on the public status page, flattened across groups.
+         * @returns {object[]} Lines
+         */
+        publicLineStatusList() {
+            const result = [];
+            for (const group of this.publicGroupList) {
+                if (Array.isArray(group.lineList)) {
+                    result.push(...group.lineList);
                 }
             }
             return result;

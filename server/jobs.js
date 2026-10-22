@@ -1,6 +1,7 @@
 const { UptimeKumaServer } = require("./uptime-kuma-server");
 const { clearOldData } = require("./jobs/clear-old-data");
 const { incrementalVacuum } = require("./jobs/incremental-vacuum");
+const { pollLineStatus } = require("./jobs/line-status");
 const Cron = require("croner");
 
 const jobs = [
@@ -14,6 +15,13 @@ const jobs = [
         name: "incremental-vacuum",
         interval: "*/5 * * * *",
         jobFunc: incrementalVacuum,
+        croner: null,
+    },
+    {
+        // Ticks every minute; each line decides whether its own interval elapsed.
+        name: "line-status-poller",
+        interval: "* * * * *",
+        jobFunc: pollLineStatus,
         croner: null,
     },
 ];

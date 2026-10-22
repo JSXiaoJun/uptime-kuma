@@ -19,6 +19,7 @@ const {
     MAINTENANCE,
     DOWN,
     INCIDENT_PAGE_SIZE,
+    log,
 } = require("../../src/util");
 
 class StatusPage extends BeanModel {
@@ -332,6 +333,20 @@ class StatusPage extends BeanModel {
 
         for (let groupBean of list) {
             let monitorGroup = await groupBean.toPublicJSON(showTags, config?.showCertificateExpiry);
+
+            // Attach any relay lines assigned to this group. The payload is kept
+            // minimal on purpose: no endpoint and no raw bandwidth figures.
+            try {
+                const LineStatus = require("./line_status");
+                const lines = await LineStatus.listByGroup(groupBean.id);
+                monitorGroup.lineList = lines.map((line) => line.toPublicJSON());
+            } catch (e) {
+                // Never break the status page because of the line module, but do
+                // leave a trace so a regression is not silently invisible.
+                log.warn("line-status", `Unable to load lines for group ${groupBean.id}: ${e.message}`);
+                monitorGroup.lineList = [];
+            }
+
             publicGroupList.push(monitorGroup);
         }
 

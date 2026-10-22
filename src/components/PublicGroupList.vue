@@ -31,7 +31,10 @@
 
                 <transition name="slide-fade-up">
                     <div v-if="!isGroupCollapsed(group.element)" class="shadow-box monitor-list mt-4 position-relative">
-                        <div v-if="group.element.monitorList.length === 0" class="text-center no-monitor-msg">
+                        <div
+                            v-if="group.element.monitorList.length === 0 && lineListOf(group.element).length === 0"
+                            class="text-center no-monitor-msg"
+                        >
                             {{ $t("No Monitors") }}
                         </div>
 
@@ -122,6 +125,33 @@
                                 </div>
                             </template>
                         </Draggable>
+
+                        <!-- Line status (relay bandwidth) for this group -->
+                        <div v-if="lineListOf(group.element).length > 0 || editMode" class="line-status-block">
+                            <div v-for="line in lineListOf(group.element)" :key="'line-' + line.id" class="line-row">
+                                <font-awesome-icon
+                                    v-if="editMode"
+                                    icon="times"
+                                    class="action remove me-2"
+                                    :title="$t('Remove')"
+                                    @click="removeLine(group.index, line.id)"
+                                />
+                                <LineStatusBar :line="line" />
+                            </div>
+
+                            <div v-if="editMode && availableLines(group.element).length > 0" class="add-line-row">
+                                <select
+                                    class="form-select form-select-sm"
+                                    :value="''"
+                                    @change="onAddLineSelected($event, group.element)"
+                                >
+                                    <option value="">{{ $t("Add a line to this group...") }}</option>
+                                    <option v-for="line in availableLines(group.element)" :key="line.id" :value="line.id">
+                                        {{ line.displayName || line.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </transition>
             </div>
@@ -137,6 +167,7 @@ import HeartbeatBar from "./HeartbeatBar.vue";
 import Uptime from "./Uptime.vue";
 import Tag from "./Tag.vue";
 import Status from "./Status.vue";
+import LineStatusBar from "./LineStatusBar.vue";
 
 export default {
     components: {
@@ -146,6 +177,7 @@ export default {
         Uptime,
         Tag,
         Status,
+        LineStatusBar,
     },
     props: {
         /** Are we in edit mode? */
@@ -175,6 +207,70 @@ export default {
         },
     },
     methods: {
+        /**
+         * Lines assigned to a group. The backend attaches `lineList` to each
+         * public group; return an empty array for older payloads.
+         * @param {object} group Public group
+         * @returns {object[]} Lines
+         */
+        lineListOf(group) {
+            if (!group || !Array.isArray(group.lineList)) {
+                return [];
+            }
+            return group.lineList;
+        },
+        /**
+         * Lines that are not yet part of this group.
+         * @param {object} group Public group
+         * @returns {object[]} Selectable lines
+         */
+        availableLines(group) {
+            const assigned = new Set(this.lineListOf(group).map((line) => line.id));
+            return (this.$root.allLineStatusList || []).filter((line) => !assigned.has(line.id));
+        },
+        /**
+         * Attach the selected line to a group.
+         * @param {Event} event Change event from the select element
+         * @param {object} group Target group
+         * @returns {void}
+         */
+        onAddLineSelected(event, group) {
+            const lineId = Number(event.target.value);
+            event.target.value = "";
+            if (!lineId) {
+                return;
+            }
+            const line = (this.$root.allLineStatusList || []).find((item) => item.id === lineId);
+            if (!line) {
+                return;
+            }
+            if (!Array.isArray(group.lineList)) {
+                group.lineList = [];
+            }
+            group.lineList.push({
+                id: line.id,
+                name: line.name,
+                displayName: line.displayName,
+                loadLevel: line.lastLoadLevel,
+                status: line.lastStatus,
+                text: line.lastText,
+                usagePercent: line.lastUsagePercent,
+                updatedAt: line.lastChecked,
+            });
+        },
+        /**
+         * Remove a line from a group.
+         * @param {number} groupIndex Index of the group in publicGroupList
+         * @param {number} lineId Line id
+         * @returns {void}
+         */
+        removeLine(groupIndex, lineId) {
+            const group = this.$root.publicGroupList[groupIndex];
+            if (!group || !Array.isArray(group.lineList)) {
+                return;
+            }
+            group.lineList = group.lineList.filter((line) => line.id !== lineId);
+        },
         /**
          * Toggle collapsed state for a group
          * @param {object} group Group to toggle
@@ -408,5 +504,14 @@ export default {
 
 .bg-maintenance {
     background-color: $maintenance;
+}
+
+.line-status-block {
+    border-top: 1px solid rgba(140, 140, 140, 0.15);
+    padding: 8px 12px 4px;
+
+    & > div + div {
+        border-top: 1px solid rgba(140, 140, 140, 0.08);
+    }
 }
 </style>

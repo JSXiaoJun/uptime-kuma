@@ -1,4 +1,4 @@
-/*
+﻿/*
  * For Client Socket
  */
 const { TimeLogger } = require("../src/util");
@@ -137,6 +137,24 @@ async function sendAPIKeyList(socket) {
 }
 
 /**
+ * Emit the configured line status list to the logged in client.
+ * @param {Socket} socket Socket.io socket instance
+ * @returns {Promise<object[]>} Serialised lines
+ */
+async function sendLineStatusList(socket) {
+    const timeLogger = new TimeLogger();
+    const LineStatus = require("./model/line_status");
+
+    const lines = await LineStatus.listAll(false);
+    const result = lines.map((line) => line.toJSON());
+
+    io.to(socket.userID).emit("lineStatusList", result);
+    timeLogger.print("Sent Line Status List");
+
+    return result;
+}
+
+/**
  * Emits the version information to the client.
  * @param {Socket} socket Socket.io socket instance
  * @param {boolean} hideVersion Should we hide the version information in the response?
@@ -241,6 +259,7 @@ module.exports = {
     sendHeartbeatList,
     sendProxyList,
     sendAPIKeyList,
+    sendLineStatusList,
     sendInfo,
     sendDockerHostList,
     sendRemoteBrowserList,
