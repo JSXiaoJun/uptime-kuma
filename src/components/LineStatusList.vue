@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <div class="shadow-box line-status-list">
         <div class="list-header">
             <h5 class="list-title">

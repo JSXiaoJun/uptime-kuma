@@ -92,15 +92,21 @@ export default {
         // connection and the login are asynchronous. The server pushes
         // `lineStatusList` right after authentication, so listen for it and
         // also ask explicitly in case that push has already happened.
-        this.emitter.on("lineStatusList", () => {
-            this.linesLoaded = true;
-        });
+        this.$root.emitter.on("lineStatusList", this.onLineStatusList);
         this.fetchLines();
     },
     beforeUnmount() {
         clearTimeout(this.fetchLinesRetry);
+        this.$root.emitter.off("lineStatusList", this.onLineStatusList);
     },
     methods: {
+        /**
+         * Mark the line block as ready once the server pushed the list.
+         * @returns {void}
+         */
+        onLineStatusList() {
+            this.linesLoaded = true;
+        },
         /**
          * Ask the server for the line catalogue.
          *

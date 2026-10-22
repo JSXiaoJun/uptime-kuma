@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <form @submit.prevent="submit">
         <div ref="modal" class="modal fade" tabindex="-1" data-bs-backdrop="static">
             <div class="modal-dialog">

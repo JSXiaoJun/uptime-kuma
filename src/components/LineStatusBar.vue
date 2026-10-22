@@ -13,16 +13,16 @@
             </span>
         </div>
 
-        <div class="line-bar" :class="{ 'line-bar--unknown': line.usagePercent === null }">
+        <div class="line-bar" :class="{ 'line-bar--unknown': percent === null }">
             <div
                 class="line-bar-fill"
                 :style="{ width: barWidth, backgroundColor: stateColor }"
-                :title="`${line.usagePercent ?? '?'}%`"
+                :title="`${percent ?? '?'}%`"
             ></div>
         </div>
 
         <div v-if="showMeta" class="line-meta">
-            <span v-if="line.updatedAt">{{ $t("Last checked") }}: {{ formatTime(line.updatedAt) }}</span>
+            <span v-if="updatedAt">{{ $t("Last checked") }}: {{ formatTime(updatedAt) }}</span>
             <span v-if="line.endpoint">{{ line.endpoint }}</span>
         </div>
     </div>
@@ -80,6 +80,9 @@ export default {
     computed: {
         publicMode() {
             return this.line.usagePercent !== undefined;
+        },
+        updatedAt() {
+            return this.publicMode ? this.line.updatedAt : this.line.lastChecked;
         },
         percent() {
             const value = this.publicMode ? this.line.usagePercent : this.line.lastUsagePercent;

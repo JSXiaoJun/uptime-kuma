@@ -126,13 +126,17 @@
                             </template>
                         </Draggable>
                     </div>
+                </transition>
 
-                    <!--
-                        Line status is rendered as a sibling of the monitor box
-                        (not inside it): the monitor list is position:relative
-                        with its own stacking context, and nesting the bars
-                        inside caused them to overlap the monitor rows.
-                    -->
+                <!--
+                    Line status is rendered as a sibling of the monitor box
+                    (not inside it): the monitor list is position:relative
+                    with its own stacking context, and nesting the bars
+                    inside caused them to overlap the monitor rows.
+                    It needs its own <transition>: a transition renders only
+                    its first child, so sharing one dropped this component.
+                -->
+                <transition name="slide-fade-up">
                     <GroupLines
                         v-if="!isGroupCollapsed(group.element)"
                         :group="group.element"

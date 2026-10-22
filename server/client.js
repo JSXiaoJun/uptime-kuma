@@ -1,4 +1,4 @@
-﻿/*
+/*
  * For Client Socket
  */
 const { TimeLogger } = require("../src/util");
