@@ -27,7 +27,10 @@
                     {{ opt.displayName || opt.name }}
                 </option>
             </select>
-            <small v-else class="text-muted">{{ $t("No line status configured yet.") }}</small>
+            <small v-else class="text-muted">
+                {{ $t("No line status configured yet.") }}
+                <a href="/dashboard" target="_blank" rel="noopener noreferrer">{{ $t("Add a line in the dashboard") }}</a>
+            </small>
         </div>
     </div>
 </template>

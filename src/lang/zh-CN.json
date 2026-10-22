@@ -1687,6 +1687,8 @@
     "Saving...": "保存中……",
     "Last checked": "上次检查",
     "No line status configured yet.": "尚未配置任何线路。",
+    "Add a line in the dashboard": "请前往仪表盘添加线路",
+    "Manage Lines": "管理线路",
     "Add a line endpoint such as https://hk1.example.com/status.json": "添加线路状态地址，例如 https://hk1.example.com/status.json",
     "Add a line to this group...": "向此分组添加线路……",
     "Delete line {name}? History will be removed.": "确定删除线路 {name} 吗？历史记录也会被清除。",

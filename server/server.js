@@ -187,6 +187,7 @@ const {
     sendAPIKeyList,
     sendRemoteBrowserList,
     sendMonitorTypeList,
+    sendLineStatusList,
 } = require("./client");
 const { statusPageSocketHandler } = require("./socket-handlers/status-page-socket-handler");
 const { databaseSocketHandler } = require("./socket-handlers/database-socket-handler");
@@ -1837,6 +1838,7 @@ async function afterLogin(socket, user) {
         sendAPIKeyList(socket),
         sendRemoteBrowserList(socket),
         sendMonitorTypeList(socket),
+        sendLineStatusList(socket),
     ]);
 
     await StatusPage.sendStatusPageList(io, socket);

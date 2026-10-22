@@ -79,12 +79,12 @@ export default {
     },
     computed: {
         /**
-         * Lines are kept in the shared root state so the status page editor and
-         * this list always agree.
+         * Lines from the admin catalogue, kept in the shared root state so the
+         * status page editor and this list always agree.
          * @returns {object[]} Lines
          */
         lines() {
-            return Array.isArray(this.$root.allLineStatusList) ? this.$root.allLineStatusList : [];
+            return Array.isArray(this.$root.lineStatusList) ? this.$root.lineStatusList : [];
         },
     },
     mounted() {
@@ -99,7 +99,7 @@ export default {
             this.$root.getSocket().emit("getLineStatusList", (res) => {
                 this.loading = false;
                 if (res.ok) {
-                    this.$root.allLineStatusList = res.data;
+                    this.$root.lineStatusList = res.data;
                     this.$emit("loaded", res.data);
                 } else {
                     this.toast.error(res.msg);

@@ -26,7 +26,12 @@
                         <MonitorList :scrollbar="true" class="sidebar-monitor-box" />
                     </div>
 
-                    <div v-if="lines.length > 0" class="line-slot">
+                    <!--
+                        Shown as soon as the list request was attempted (even if
+                        it failed), so the empty state and the "Add Line" entry
+                        inside it stay reachable.
+                    -->
+                    <div v-if="linesLoaded" class="line-slot">
                         <LineStatusList ref="lineList" @add="$refs.lineDialog.show()" @edit="onEditLine" />
                     </div>
                 </div>
@@ -56,22 +61,78 @@ export default {
     data() {
         return {
             height: 0,
+            // The line block used to be rendered only when the list was
+            // already populated, but LineStatusList is the component that
+            // fetches the list, so it never got a chance to load. Show it once
+            // the request has been attempted instead.
+            linesLoaded: false,
         };
     },
     computed: {
         /**
-         * Lines from the shared catalogue, used to decide whether the sidebar
+         * Lines from the admin catalogue, used to decide whether the sidebar
          * line block should be rendered at all.
+         *
+         * This deliberately reads `lineStatusList` and not the status-page
+         * `allLineStatusList`: the two payloads are shaped differently (admin
+         * rows carry `lastUsagePercent`/`endpoint`, status page rows carry
+         * `usagePercent`/`updatedAt`), and sharing one field made the admin
+         * block render status page data with an empty timestamp.
          * @returns {object[]} Lines
          */
         lines() {
-            return Array.isArray(this.$root.allLineStatusList) ? this.$root.allLineStatusList : [];
+            return Array.isArray(this.$root.lineStatusList) ? this.$root.lineStatusList : [];
         },
     },
     mounted() {
         this.height = this.$refs.container.offsetHeight;
     },
+    created() {
+        // created() runs after the socket mixin's own created() hook, but the
+        // connection and the login are asynchronous. The server pushes
+        // `lineStatusList` right after authentication, so listen for it and
+        // also ask explicitly in case that push has already happened.
+        this.emitter.on("lineStatusList", () => {
+            this.linesLoaded = true;
+        });
+        this.fetchLines();
+    },
+    beforeUnmount() {
+        clearTimeout(this.fetchLinesRetry);
+    },
     methods: {
+        /**
+         * Ask the server for the line catalogue.
+         *
+         * The list used to be requested only by LineStatusList's mount hook,
+         * but that component is rendered behind a `v-if` that depended on the
+         * list being non-empty, so on a fresh page load nothing ever asked and
+         * the block stayed hidden.
+         * @returns {void}
+         */
+        fetchLines() {
+            // The socket mixin already pulled the list after login.
+            if (this.$root.lineStatusListLoaded) {
+                this.linesLoaded = true;
+            }
+            const socket = this.$root.getSocket();
+            if (!socket || !socket.connected) {
+                // Retry until the socket and the login are ready.
+                clearTimeout(this.fetchLinesRetry);
+                this.fetchLinesRetry = setTimeout(() => this.fetchLines(), 500);
+                return;
+            }
+            socket.emit("getLineStatusList", (res) => {
+                if (res.ok) {
+                    // Stored locally only; `$root.lineStatusList` is kept in
+                    // sync by the socket "lineStatusList" event.
+                    this.$root.lineStatusList = res.data;
+                }
+                // Render the block even when the request failed, so the
+                // loading/error state and the "Add Line" entry stay reachable.
+                this.linesLoaded = true;
+            });
+        },
         /**
          * Open the dialog pre-filled with an existing line.
          * @param {object} line Line to edit

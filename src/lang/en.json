@@ -1577,6 +1577,8 @@
     "Saving...": "Saving...",
     "Last checked": "Last checked",
     "No line status configured yet.": "No line status configured yet.",
+    "Add a line in the dashboard": "Add one in the dashboard",
+    "Manage Lines": "Manage Lines",
     "Add a line endpoint such as https://hk1.example.com/status.json": "Add a line endpoint such as https://hk1.example.com/status.json",
     "Add a line to this group...": "Add a line to this group...",
     "Delete line {name}? History will be removed.": "Delete line {name}? History will be removed.",

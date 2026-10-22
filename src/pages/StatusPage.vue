@@ -284,6 +284,16 @@
                         <font-awesome-icon icon="tachometer-alt" />
                         {{ $t("Go to Dashboard") }}
                     </a>
+
+                    <!--
+                        Lines are created in the dashboard, not here, so give a
+                        direct way to get there instead of leaving a visitor of
+                        the status page editor guessing.
+                    -->
+                    <a href="/dashboard" class="btn btn-primary mb-2 ms-2">
+                        <font-awesome-icon icon="network-wired" />
+                        {{ $t("Manage Lines") }}
+                    </a>
                 </div>
 
                 <div v-else>

@@ -51,6 +51,9 @@ export default {
             tlsInfoList: {},
             domainInfoList: {},
             notificationList: [],
+            lineStatusList: [],
+            // Whether the server has pushed the line list at least once.
+            lineStatusListLoaded: false,
             dockerHostList: [],
             remoteBrowserList: [],
             statusPageListLoaded: false,
@@ -179,7 +182,8 @@ export default {
             });
 
             socket.on("lineStatusList", (data) => {
-                this.allLineStatusList = data;
+                this.lineStatusList = data;
+                this.lineStatusListLoaded = true;
                 this.emitter.emit("lineStatusList", data);
             });
 
@@ -287,10 +291,13 @@ export default {
                     this.clearData();
                 }
 
+                this.fetchLineStatusList();
+
                 this.socket.firstConnect = false;
             });
 
-            // cloudflared
+            // The server pushes the admin line list right after a successful
+            // login (and after every edit), so pages only need to read it.
             socket.on("cloudflared_installed", (res) => (this.cloudflared.installed = res));
             socket.on("cloudflared_running", (res) => (this.cloudflared.running = res));
             socket.on("cloudflared_message", (res) => (this.cloudflared.message = res));
@@ -305,6 +312,34 @@ export default {
                 location.reload();
             });
         },
+        /**
+         * Ask for the admin line catalogue once the client is authenticated.
+         *
+         * The dashboard used to rely on LineStatusList fetching this on mount,
+         * which never happened while the list was rendered conditionally. The
+         * server pushes `lineStatusList` after a successful login, so retrying
+         * is cheap; it just covers the ordering between connect and loginByToken.
+         * @param {number} attempt Current attempt number
+         * @returns {void}
+         */
+        fetchLineStatusList(attempt = 0) {
+            if (!socket || !socket.connected) {
+                return;
+            }
+            if (!this.loggedIn && attempt < 20) {
+                setTimeout(() => this.fetchLineStatusList(attempt + 1), 500);
+                return;
+            }
+            if (!this.loggedIn) {
+                return;
+            }
+            socket.emit("getLineStatusList", (res) => {
+                if (res?.ok) {
+                    this.lineStatusList = res.data;
+                }
+            });
+        },
+
         /**
          * parse all urls from list.
          * @param {object} data Monitor data to modify
