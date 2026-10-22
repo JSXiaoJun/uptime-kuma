@@ -1,4 +1,4 @@
-﻿<template>
+<template>
     <div v-if="loadedTheme" class="container mt-3">
         <!-- Sidebar for edit mode -->
         <div v-if="enableEditMode" class="sidebar" data-testid="edit-sidebar">
@@ -1044,15 +1044,26 @@ export default {
     methods: {
         /**
          * Load every configured line so the editor can attach them to groups.
+         *
+         * The socket connection is established asynchronously when entering edit
+         * mode, so calling this too early would hit "not logged in" and leave the
+         * line picker permanently empty. Retry until the login is confirmed.
+         * @param {number} attempt Current attempt number
          * @returns {void}
          */
-        loadAllLineStatusList() {
-            if (!this.$root.loggedIn) {
+        loadAllLineStatusList(attempt = 0) {
+            const socket = this.$root.getSocket();
+            if (!socket || !socket.connected || !this.$root.loggedIn) {
+                if (attempt < 20) {
+                    setTimeout(() => this.loadAllLineStatusList(attempt + 1), 500);
+                }
                 return;
             }
-            this.$root.getSocket().emit("getLineStatusList", (res) => {
+            socket.emit("getLineStatusList", (res) => {
                 if (res.ok) {
                     this.$root.allLineStatusList = res.data;
+                } else if (attempt < 20) {
+                    setTimeout(() => this.loadAllLineStatusList(attempt + 1), 500);
                 }
             });
         },

@@ -125,9 +125,19 @@
                                 </div>
                             </template>
                         </Draggable>
+                    </div>
 
-                        <!-- Line status (relay bandwidth) for this group -->
-                        <div v-if="lineListOf(group.element).length > 0 || editMode" class="line-status-block">
+                    <!--
+                        Line status is rendered as a sibling of the monitor box
+                        (not inside it): the monitor list is position:relative
+                        with its own stacking context, and nesting the bars
+                        inside caused them to overlap the monitor rows.
+                    -->
+                    <div
+                        v-if="!isGroupCollapsed(group.element) && (lineListOf(group.element).length > 0 || editMode)"
+                        class="shadow-box line-status-box mt-3"
+                    >
+                        <div v-if="lineListOf(group.element).length > 0" class="line-status-block">
                             <div v-for="line in lineListOf(group.element)" :key="'line-' + line.id" class="line-row">
                                 <font-awesome-icon
                                     v-if="editMode"
@@ -138,23 +148,23 @@
                                 />
                                 <LineStatusBar :line="line" />
                             </div>
+                        </div>
 
-                            <div v-if="editMode && availableLines(group.element).length > 0" class="add-line-row">
-                                <select
-                                    class="form-select form-select-sm"
-                                    :value="''"
-                                    @change="onAddLineSelected($event, group.element)"
-                                >
-                                    <option value="">{{ $t("Add a line to this group...") }}</option>
-                                    <option
-                                        v-for="line in availableLines(group.element)"
-                                        :key="line.id"
-                                        :value="line.id"
-                                    >
-                                        {{ line.displayName || line.name }}
-                                    </option>
-                                </select>
-                            </div>
+                        <div
+                            v-if="editMode && availableLines(group.element).length > 0"
+                            class="add-line-row"
+                            :class="{ 'add-line-row--bordered': lineListOf(group.element).length > 0 }"
+                        >
+                            <select
+                                class="form-select form-select-sm"
+                                :value="''"
+                                @change="onAddLineSelected($event, group.element)"
+                            >
+                                <option value="">{{ $t("Add a line to this group...") }}</option>
+                                <option v-for="line in availableLines(group.element)" :key="line.id" :value="line.id">
+                                    {{ line.displayName || line.name }}
+                                </option>
+                            </select>
                         </div>
                     </div>
                 </transition>
@@ -210,7 +220,47 @@ export default {
             return this.$root.publicGroupList.length >= 2;
         },
     },
+    watch: {
+        /**
+         * Entering edit mode means the operator wants to attach lines, so make
+         * sure the catalogue is present even if the page-level load was skipped.
+         * @returns {void}
+         */
+        editMode: {
+            immediate: true,
+            handler(val) {
+                if (val) {
+                    this.ensureLineList();
+                }
+            },
+        },
+    },
     methods: {
+        /**
+         * Fetch the line catalogue once, retrying while the socket logs in.
+         * @param {number} attempt Current attempt
+         * @returns {void}
+         */
+        ensureLineList(attempt = 0) {
+            const existing = this.$root.allLineStatusList;
+            if (Array.isArray(existing) && existing.length > 0) {
+                return;
+            }
+            const socket = this.$root.getSocket ? this.$root.getSocket() : null;
+            if (!socket || !socket.connected) {
+                if (attempt < 20) {
+                    setTimeout(() => this.ensureLineList(attempt + 1), 500);
+                }
+                return;
+            }
+            socket.emit("getLineStatusList", (res) => {
+                if (res && res.ok) {
+                    this.$root.allLineStatusList = res.data;
+                } else if (attempt < 20) {
+                    setTimeout(() => this.ensureLineList(attempt + 1), 500);
+                }
+            });
+        },
         /**
          * Lines assigned to a group. The backend attaches `lineList` to each
          * public group; return an empty array for older payloads.
@@ -510,12 +560,28 @@ export default {
     background-color: $maintenance;
 }
 
+/*
+ * Rendered as its own box below the monitor list so the bars never overlap
+ * the monitor rows (that list has position:relative and its own stacking
+ * context).
+ */
+.line-status-box {
+    padding: 4px 0;
+}
+
 .line-status-block {
-    border-top: 1px solid rgba(140, 140, 140, 0.15);
-    padding: 8px 12px 4px;
+    padding: 4px 12px;
 
     & > div + div {
-        border-top: 1px solid rgba(140, 140, 140, 0.08);
+        border-top: 1px solid rgba(140, 140, 140, 0.1);
+    }
+}
+
+.add-line-row {
+    padding: 8px 12px;
+
+    &--bordered {
+        border-top: 1px solid rgba(140, 140, 140, 0.1);
     }
 }
 </style>
