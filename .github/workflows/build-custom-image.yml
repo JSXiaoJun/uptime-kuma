@@ -87,6 +87,14 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # The `build` stage copies the whole context with `COPY . .`. Docker
+          # hashes that directory to decide whether to reuse the cached layer,
+          # and with cross-run GHA cache it has been observed to reuse a stale
+          # layer even though dist/ changed, producing an image identical to
+          # the previous build. Passing the commit SHA as a build arg makes the
+          # layer cache commit-specific, so every commit gets a fresh layer.
+          build-args: |
+            BUILD_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
@@ -96,8 +104,16 @@ jobs:
           {
             echo "### Image published"
             echo ""
+            echo "Commit: \`${{ github.sha }}\`"
+            echo ""
             echo '```'
             echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+            echo ""
+            echo "Verify the deployed image actually contains this commit:"
+            echo ""
+            echo '```bash'
+            echo "docker run --rm --entrypoint sh ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest -c 'cat /app/data/.build-commit'"
             echo '```'
             echo ""
             echo "Pull it with:"

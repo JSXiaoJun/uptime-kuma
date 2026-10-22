@@ -14,6 +14,13 @@ FROM louislam/uptime-kuma:base2 AS build
 USER node
 WORKDIR /app
 
+# Cache-busting marker for the `COPY . .` layer below. Docker decides whether
+# that layer can be reused by hashing the build context, and together with the
+# GHA cache it has been seen to keep a stale layer across runs (producing an
+# image identical to the previous commit). Declaring the commit here means the
+# instruction changes on every commit, so the layer is always rebuilt.
+ARG BUILD_COMMIT=unknown
+
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
 COPY --chown=node:node .npmrc .npmrc
 COPY --chown=node:node package.json package.json
@@ -21,7 +28,7 @@ COPY --chown=node:node package-lock.json package-lock.json
 RUN npm ci --omit=dev
 COPY . .
 COPY --chown=node:node --from=build_healthcheck /app/extra/healthcheck /app/extra/healthcheck
-RUN mkdir ./data
+RUN mkdir ./data && echo "${BUILD_COMMIT}" > ./data/.build-commit
 
 ############################################
 # ⭐ Main Image
