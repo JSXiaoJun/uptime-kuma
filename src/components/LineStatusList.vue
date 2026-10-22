@@ -19,7 +19,9 @@
         <div v-else-if="lines.length === 0" class="list-empty">
             {{ $t("No line status configured yet.") }}
             <br />
-            <small class="text-muted">{{ $t("Add a line endpoint such as https://hk1.example.com/status.json") }}</small>
+            <small class="text-muted">
+                {{ $t("Add a line endpoint such as https://hk1.example.com/status.json") }}
+            </small>
         </div>
 
         <div v-else class="list-body">

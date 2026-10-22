@@ -1,0 +1,13 @@
+﻿fix: register missing translation keys for line status fields
+
+The backend test suite validates that every $t() key used in a component
+exists in en.json. Five help-text strings in LineStatusDialog used the
+English sentence as the key while en.json carried short descriptive keys
+instead, so 
+pm run test-backend failed with "Missing translation keys".
+
+Adds the literal English strings as keys (matching the convention used
+elsewhere in the codebase) with Chinese translations, and applies prettier
+to the files touched by this feature.
+
+Verified: check-translations.test.js 2/2 and test-status-page.js 7/7.

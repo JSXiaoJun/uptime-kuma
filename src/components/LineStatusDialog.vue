@@ -55,13 +55,17 @@
                                 required
                             />
                             <div class="form-text">
-                                {{ $t("Must return JSON with usage_percent (0-100). See the status-generator example.") }}
+                                {{
+                                    $t("Must return JSON with usage_percent (0-100). See the status-generator example.")
+                                }}
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="line-interval" class="form-label">{{ $t("Sample interval (seconds)") }}</label>
+                                <label for="line-interval" class="form-label">
+                                    {{ $t("Sample interval (seconds)") }}
+                                </label>
                                 <input
                                     id="line-interval"
                                     v-model.number="form.intervalSeconds"
@@ -85,7 +89,9 @@
                                     max="100000"
                                     step="1"
                                 />
-                                <div class="form-text">{{ $t("Used for reference only; the endpoint reports the percentage.") }}</div>
+                                <div class="form-text">
+                                    {{ $t("Used for reference only; the endpoint reports the percentage.") }}
+                                </div>
                             </div>
                         </div>
 

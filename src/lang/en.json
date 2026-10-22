@@ -1586,5 +1586,10 @@
     "Line status level.saturated": "Congested",
     "Line status level.unknown": "Unknown",
     "e.g. hk1": "e.g. hk1",
-    "e.g. Hong Kong CN2": "e.g. Hong Kong CN2"
+    "e.g. Hong Kong CN2": "e.g. Hong Kong CN2",
+    "Short identifier shown before the percentage.": "Short identifier shown before the percentage.",
+    "Optional. Falls back to the line name.": "Optional. Falls back to the line name.",
+    "Must return JSON with usage_percent (0-100). See the status-generator example.": "Must return JSON with usage_percent (0-100). See the status-generator example.",
+    "Minimum 60 seconds.": "Minimum 60 seconds.",
+    "Used for reference only; the endpoint reports the percentage.": "Used for reference only; the endpoint reports the percentage."
 }

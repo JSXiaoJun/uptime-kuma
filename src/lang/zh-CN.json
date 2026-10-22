@@ -1696,5 +1696,10 @@
     "Line status level.saturated": "线路拥堵",
     "Line status level.unknown": "状态未知",
     "e.g. hk1": "例如 hk1",
-    "e.g. Hong Kong CN2": "例如 香港 CN2"
+    "e.g. Hong Kong CN2": "例如 香港 CN2",
+    "Short identifier shown before the percentage.": "显示在百分比前面的简短标识。",
+    "Optional. Falls back to the line name.": "可选，留空则使用线路名称。",
+    "Must return JSON with usage_percent (0-100). See the status-generator example.": "需返回包含 usage_percent（0-100）的 JSON。",
+    "Minimum 60 seconds.": "最少 60 秒。",
+    "Used for reference only; the endpoint reports the percentage.": "仅作参考，占用百分比由接口返回。"
 }

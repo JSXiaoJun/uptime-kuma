@@ -146,7 +146,11 @@
                                     @change="onAddLineSelected($event, group.element)"
                                 >
                                     <option value="">{{ $t("Add a line to this group...") }}</option>
-                                    <option v-for="line in availableLines(group.element)" :key="line.id" :value="line.id">
+                                    <option
+                                        v-for="line in availableLines(group.element)"
+                                        :key="line.id"
+                                        :value="line.id"
+                                    >
                                         {{ line.displayName || line.name }}
                                     </option>
                                 </select>

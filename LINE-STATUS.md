@@ -14,13 +14,13 @@
 
 占用百分比对应的等级（`server/jobs/line-status.js` 中的 `deriveLevel()`）：
 
-| 占用率 | loadLevel | status | 显示文案 | 颜色 |
-|--------|-----------|--------|----------|------|
-| < 50% | `low` | `normal` | 线路畅通 | 绿 `#10b981` |
-| 50% ~ 75% | `medium` | `normal` | 使用正常 | 黄 `#eab308` |
-| 75% ~ 90% | `high` | `busy` | 线路较忙 | 橙 `#f97316` |
-| >= 90% | `saturated` | `congested` | 线路拥堵 | 红 `#ef4444` |
-| 无数据 | `unknown` | `unknown` | 状态未知 | 灰 `#9ca3af` |
+| 占用率    | loadLevel   | status      | 显示文案 | 颜色         |
+| --------- | ----------- | ----------- | -------- | ------------ |
+| < 50%     | `low`       | `normal`    | 线路畅通 | 绿 `#10b981` |
+| 50% ~ 75% | `medium`    | `normal`    | 使用正常 | 黄 `#eab308` |
+| 75% ~ 90% | `high`      | `busy`      | 线路较忙 | 橙 `#f97316` |
+| >= 90%    | `saturated` | `congested` | 线路拥堵 | 红 `#ef4444` |
+| 无数据    | `unknown`   | `unknown`   | 状态未知 | 灰 `#9ca3af` |
 
 阈值集中在一处，想调整只需改 `deriveLevel()`。
 
@@ -57,11 +57,11 @@
 
 三张表：
 
-| 表 | 用途 |
-|---|---|
-| `line_status` | 线路定义与最新状态快照 |
-| `line_status_sample` | 历史采样（用于画曲线、保留 7 天） |
-| `group_line` | 线路与状态页分组的关联，等价于 `monitor_group` |
+| 表                   | 用途                                           |
+| -------------------- | ---------------------------------------------- |
+| `line_status`        | 线路定义与最新状态快照                         |
+| `line_status_sample` | 历史采样（用于画曲线、保留 7 天）              |
+| `group_line`         | 线路与状态页分组的关联，等价于 `monitor_group` |
 
 迁移是幂等的（使用 `hasTable` 守卫），并且提供 `down()` 回滚。
 
@@ -91,15 +91,15 @@
 
 ## Socket 事件
 
-| 事件 | 方向 | 说明 |
-|---|---|---|
-| `getLineStatusList` | 客户端 → 服务端 | 获取全部线路（需登录） |
-| `addLineStatus` | 客户端 → 服务端 | 新增线路，会立即探测一次 |
-| `editLineStatus` | 客户端 → 服务端 | 编辑线路 |
-| `deleteLineStatus` | 客户端 → 服务端 | 删除线路及其历史 |
-| `refreshLineStatus` | 客户端 → 服务端 | 立即采样一次 |
+| 事件                   | 方向            | 说明                     |
+| ---------------------- | --------------- | ------------------------ |
+| `getLineStatusList`    | 客户端 → 服务端 | 获取全部线路（需登录）   |
+| `addLineStatus`        | 客户端 → 服务端 | 新增线路，会立即探测一次 |
+| `editLineStatus`       | 客户端 → 服务端 | 编辑线路                 |
+| `deleteLineStatus`     | 客户端 → 服务端 | 删除线路及其历史         |
+| `refreshLineStatus`    | 客户端 → 服务端 | 立即采样一次             |
 | `getLineStatusHistory` | 客户端 → 服务端 | 取 N 小时样本（默认 24） |
-| `lineStatusList` | 服务端 → 客户端 | 线路列表推送 |
+| `lineStatusList`       | 服务端 → 客户端 | 线路列表推送             |
 
 ## 改动文件清单
 
@@ -211,7 +211,6 @@ node --check server/jobs/line-status.js
 docker run --rm --entrypoint sh ghcr.io/jsxiaojun/uptime-kuma:latest -c \
   "ls /app/dist/index.html && ls /app/server/model/line_status.js"
 ```
-
 
 ## 设计取舍
 

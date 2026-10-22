@@ -29,7 +29,9 @@ function normalisePayload(data) {
         throw new Error("Endpoint is too long.");
     }
 
-    const displayName = String(data?.displayName ?? "").trim().substring(0, 255);
+    const displayName = String(data?.displayName ?? "")
+        .trim()
+        .substring(0, 255);
 
     let capacityMbps = Number(data?.capacityMbps ?? 80);
     if (!Number.isFinite(capacityMbps) || capacityMbps <= 0 || capacityMbps > 100000) {
@@ -230,10 +232,10 @@ module.exports.lineStatusSocketHandler = (socket) => {
         try {
             checkLogin(socket);
             if (enabled) {
-                const existing = await R.getRow(
-                    "SELECT id FROM group_line WHERE group_id = ? AND line_id = ?",
-                    [groupId, lineId]
-                );
+                const existing = await R.getRow("SELECT id FROM group_line WHERE group_id = ? AND line_id = ?", [
+                    groupId,
+                    lineId,
+                ]);
                 if (!existing) {
                     const bean = R.dispense("group_line");
                     bean.group_id = groupId;
