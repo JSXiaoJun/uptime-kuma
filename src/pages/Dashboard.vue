@@ -1,7 +1,7 @@
 <template>
     <div class="container-fluid">
         <div class="row">
-            <div v-if="!$root.isMobile" class="col-12 col-md-5 col-xl-4 ps-0">
+            <div v-if="!$root.isMobile" class="col-12 col-md-5 col-xl-4 ps-0 sidebar">
                 <div class="d-flex gap-2 flex-wrap mb-3">
                     <router-link to="/add" class="btn btn-primary">
                         <font-awesome-icon icon="plus" />
@@ -13,9 +13,23 @@
                         {{ $t("Add Line") }}
                     </button>
                 </div>
-                <MonitorList :scrollbar="true" />
 
-                <LineStatusList ref="lineList" @add="$refs.lineDialog.show()" @edit="onEditLine" />
+                <!--
+                    The monitor list sizes itself with `calc(100vh - 160px)`,
+                    which fills the viewport and pushes anything after it out of
+                    view (the line cards ended up scrolled inside the monitor
+                    list). Wrapping the list in a flex child that can shrink
+                    keeps both blocks visible.
+                -->
+                <div class="sidebar-stack">
+                    <div class="monitor-slot">
+                        <MonitorList :scrollbar="true" />
+                    </div>
+
+                    <div v-if="lines.length > 0" class="line-slot">
+                        <LineStatusList ref="lineList" @add="$refs.lineDialog.show()" @edit="onEditLine" />
+                    </div>
+                </div>
             </div>
 
             <div ref="container" class="col-12 col-md-7 col-xl-8 mb-3 gx-0">
@@ -44,6 +58,16 @@ export default {
             height: 0,
         };
     },
+    computed: {
+        /**
+         * Lines from the shared catalogue, used to decide whether the sidebar
+         * line block should be rendered at all.
+         * @returns {object[]} Lines
+         */
+        lines() {
+            return Array.isArray(this.$root.allLineStatusList) ? this.$root.allLineStatusList : [];
+        },
+    },
     mounted() {
         this.height = this.$refs.container.offsetHeight;
     },
@@ -63,5 +87,39 @@ export default {
 <style lang="scss" scoped>
 .container-fluid {
     width: 98%;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 100px);
+}
+
+.sidebar-stack {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 12px;
+}
+
+.monitor-slot {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+
+    /*
+     * MonitorList hard-codes calc(100vh - 160px); constrain it to the space the
+     * flex layout actually gives it so it never covers the line cards.
+     */
+    :deep(> .shadow-box) {
+        height: 100% !important;
+        margin-bottom: 0 !important;
+    }
+}
+
+.line-slot {
+    flex: 0 0 auto;
+    max-height: 45%;
+    overflow-y: auto;
 }
 </style>

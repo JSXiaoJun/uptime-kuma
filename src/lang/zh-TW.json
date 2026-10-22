@@ -1298,5 +1298,6 @@
     "Optional. Falls back to the line name.": "選填，留空則使用線路名稱。",
     "Must return JSON with usage_percent (0-100). See the status-generator example.": "需回傳包含 usage_percent（0-100）的 JSON。",
     "Minimum 60 seconds.": "最少 60 秒。",
-    "Used for reference only; the endpoint reports the percentage.": "僅供參考，使用百分比由介面回傳。"
+    "Used for reference only; the endpoint reports the percentage.": "僅供參考，使用百分比由介面回傳。",
+    "No lines in this group yet.": "此群組尚無線路。"
 }
