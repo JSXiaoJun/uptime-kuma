@@ -1,8 +1,9 @@
 name: autofix.ci
 
+# Kept for pull requests only (the autofix.ci service is only configured on
+# the upstream repository, so this is a no-op here anyway). It used to run on
+# every push, which added a failed run to every commit in this fork.
 on:
-  push:
-    branches: ["master", "1.23.X"]
   pull_request:
 permissions: {}
 

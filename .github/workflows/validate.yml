@@ -1,8 +1,7 @@
 name: validate
+# No push trigger in this fork, so a push only shows the image build. The
+# checks still run on pull requests, and on demand from the Actions tab.
 on:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master

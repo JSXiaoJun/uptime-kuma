@@ -6,9 +6,7 @@ name: Merge Conflict Labeler
 # 3. Doesn't checkout or execute any untrusted code from PRs
 # 4. Only adds/removes labels based on merge conflict status
 on: # zizmor: ignore[dangerous-triggers]
-  push:
-    branches:
-      - master
+  # No push trigger in this fork: labelling happens when a PR is updated.
   pull_request_target:
     branches:
       - master
