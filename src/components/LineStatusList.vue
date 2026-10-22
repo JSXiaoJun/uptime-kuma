@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="shadow-box line-status-list">
         <div class="list-header">
             <h5 class="list-title">
@@ -96,7 +96,7 @@ export default {
          * @returns {void}
          */
         load() {
-            this.$root.socket.emit("getLineStatusList", (res) => {
+            this.$root.getSocket().emit("getLineStatusList", (res) => {
                 this.loading = false;
                 if (res.ok) {
                     this.$root.allLineStatusList = res.data;
@@ -113,7 +113,7 @@ export default {
          */
         refresh(line) {
             this.refreshing = { ...this.refreshing, [line.id]: true };
-            this.$root.socket.emit("refreshLineStatus", line.id, (res) => {
+            this.$root.getSocket().emit("refreshLineStatus", line.id, (res) => {
                 this.refreshing = { ...this.refreshing, [line.id]: false };
                 if (res.ok) {
                     this.toast.success(this.$t("Refreshed"));
@@ -132,7 +132,7 @@ export default {
             if (!window.confirm(this.$t("Delete line {name}? History will be removed.", { name }))) {
                 return;
             }
-            this.$root.socket.emit("deleteLineStatus", line.id, (res) => {
+            this.$root.getSocket().emit("deleteLineStatus", line.id, (res) => {
                 if (res.ok) {
                     this.toast.success(this.$t("successDeleted"));
                 } else {

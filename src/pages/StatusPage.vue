@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div v-if="loadedTheme" class="container mt-3">
         <!-- Sidebar for edit mode -->
         <div v-if="enableEditMode" class="sidebar" data-testid="edit-sidebar">
@@ -485,8 +485,8 @@
 
             <div class="mb-4">
                 <div v-if="$root.publicGroupList.length === 0 && loadedData" class="text-center">
-                    <!-- 👀 Nothing here, please add a group or a monitor. -->
-                    👀 {{ $t("statusPageNothing") }}
+                    <!-- 馃憖 Nothing here, please add a group or a monitor. -->
+                    馃憖 {{ $t("statusPageNothing") }}
                 </div>
 
                 <PublicGroupList
@@ -1050,7 +1050,7 @@ export default {
             if (!this.$root.loggedIn) {
                 return;
             }
-            this.$root.socket.emit("getLineStatusList", (res) => {
+            this.$root.getSocket().emit("getLineStatusList", (res) => {
                 if (res.ok) {
                     this.$root.allLineStatusList = res.data;
                 }

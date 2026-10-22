@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <form @submit.prevent="submit">
         <div ref="modal" class="modal fade" tabindex="-1" data-bs-backdrop="static">
             <div class="modal-dialog">
@@ -212,7 +212,7 @@ export default {
             const event = this.isEdit ? "editLineStatus" : "addLineStatus";
             const args = this.isEdit ? [this.form.id, payload] : [payload];
 
-            this.$root.socket.emit(event, ...args, (res) => {
+            this.$root.getSocket().emit(event, ...args, (res) => {
                 this.processing = false;
                 if (res.ok) {
                     this.toast.success(this.isEdit ? this.$t("Saved.") : this.$t("successAdded"));
