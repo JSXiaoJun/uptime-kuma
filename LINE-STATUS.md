@@ -135,6 +135,53 @@ src/lang/{en,zh-CN,zh-TW}.json                       文案
 
 ## 构建与部署
 
+### 方式一：推送后自动构建镜像（推荐）
+
+`.github/workflows/build-custom-image.yml` 会在每次推送到 `master` 时自动：
+
+1. `npm ci` 安装依赖
+2. `npm run build` 编译前端
+3. 校验 `dist/index.html` 与 `server/model/line_status.js` 存在
+4. 用 `docker/dockerfile` 的 `release` 阶段构建镜像并推送到 GHCR
+
+镜像地址：
+
+```
+ghcr.io/jsxiaojun/uptime-kuma:latest      # master 最新
+ghcr.io/jsxiaojun/uptime-kuma:<short-sha> # 每次提交一个
+```
+
+服务器上更新只需：
+
+```bash
+docker pull ghcr.io/jsxiaojun/uptime-kuma:latest
+
+docker stop uptime-kuma && docker rm uptime-kuma
+docker run -d --name uptime-kuma \
+  --restart unless-stopped \
+  -p 3001:3001 \
+  -v /opt/uptime-kuma/data:/app/data \
+  ghcr.io/jsxiaojun/uptime-kuma:latest
+```
+
+> 注意：上方 `data` 路径按你的实际情况替换。**挂载必须保持一致，否则监控历史会丢失。**
+
+GHCR 包默认是私有的，首次使用需要在服务器上登录：
+
+```bash
+echo <你的GitHub_PAT> | docker login ghcr.io -u <你的GitHub用户名> --password-stdin
+```
+
+PAT 需要勾选 `read:packages` 权限。也可以在 GitHub 仓库的
+`Packages` 页面把包的可见性改成 public，这样就无需登录。
+
+**为什么需要在 CI 里先编译前端**：`docker/dockerfile` 的 `build` 阶段只跑
+`npm ci --omit=dev`，不含 devDependencies，因此镜像里不会有 `dist/`。
+官方发布流程是在 GitHub Actions 中预先构建好 `dist.tar.gz` 再打包，
+我们采用同样的思路。
+
+### 方式二：本机源码运行
+
 ```bash
 npm ci                 # 安装依赖
 npm run build          # 构建前端，产物在 dist/
@@ -142,6 +189,11 @@ npm run start-server   # 启动（生产建议用 pm2 或 systemd）
 ```
 
 升级已有实例时，启动后 migrations 会自动执行，无需手工建表。
+
+### 常见坑
+
+- **不要用面板的「升级容器」**：它只会拉取 `louislam/uptime-kuma`，会把自定义镜像覆盖回官方版。
+- **直接 `docker build` 会得到没有前端界面的镜像**：必须先执行 `npm run build`。
 
 ## 快速自检
 
@@ -154,7 +206,12 @@ curl -s https://你的kuma域名/api/line-status | head -20
 
 # 3. 后端模块加载无误
 node --check server/jobs/line-status.js
+
+# 4. 镜像里确实带了前端与线路模块
+docker run --rm --entrypoint sh ghcr.io/jsxiaojun/uptime-kuma:latest -c \
+  "ls /app/dist/index.html && ls /app/server/model/line_status.js"
 ```
+
 
 ## 设计取舍
 
