@@ -1704,5 +1704,7 @@
     "Must return JSON with usage_percent (0-100). See the status-generator example.": "需返回包含 usage_percent（0-100）的 JSON。",
     "Minimum 60 seconds.": "最少 60 秒。",
     "Used for reference only; the endpoint reports the percentage.": "仅作参考，占用百分比由接口返回。",
-    "No lines in this group yet.": "此分组暂无线路。"
+    "No lines in this group yet.": "此分组暂无线路。",
+    "Monitors tab": "监控项",
+    "Lines tab": "线路"
 }

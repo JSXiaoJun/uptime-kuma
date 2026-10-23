@@ -30,33 +30,7 @@
 
 <script>
 import dayjs from "dayjs";
-
-/**
- * Colour thresholds for the load levels reported by the relay servers.
- * Kept in sync with deriveLevel() on the backend.
- */
-const LEVEL_STYLES = {
-    low: {
-        color: "#10b981",
-        icon: "check-circle",
-    },
-    medium: {
-        color: "#eab308",
-        icon: "exclamation-circle",
-    },
-    high: {
-        color: "#f97316",
-        icon: "exclamation-triangle",
-    },
-    saturated: {
-        color: "#ef4444",
-        icon: "times-circle",
-    },
-    unknown: {
-        color: "#9ca3af",
-        icon: "question-circle",
-    },
-};
+import { LEVEL_STYLES, readLineStatus } from "../line-status.js";
 
 export default {
     name: "LineStatusBar",
@@ -70,7 +44,7 @@ export default {
             required: true,
         },
         /**
-         * Hide the endpoint and timestamp (used on public status pages).
+         * Show the endpoint and timestamp under the bar.
          */
         showMeta: {
             type: Boolean,
@@ -78,41 +52,17 @@ export default {
         },
     },
     computed: {
-        publicMode() {
-            return this.line.usagePercent !== undefined;
+        status() {
+            return readLineStatus(this.line);
         },
         updatedAt() {
-            return this.publicMode ? this.line.updatedAt : this.line.lastChecked;
+            return this.status.updatedAt;
         },
         percent() {
-            const value = this.publicMode ? this.line.usagePercent : this.line.lastUsagePercent;
-            if (value === null || value === undefined) {
-                return null;
-            }
-            const parsed = Number(value);
-            return Number.isNaN(parsed) ? null : Math.max(0, Math.min(100, parsed));
-        },
-        level() {
-            const raw = this.publicMode ? this.line.loadLevel : this.line.lastLoadLevel;
-            if (raw && LEVEL_STYLES[raw]) {
-                return raw;
-            }
-            if (this.percent === null) {
-                return "unknown";
-            }
-            if (this.percent < 50) {
-                return "low";
-            }
-            if (this.percent < 75) {
-                return "medium";
-            }
-            if (this.percent < 90) {
-                return "high";
-            }
-            return "saturated";
+            return this.status.percent;
         },
         stateStyle() {
-            return LEVEL_STYLES[this.level] || LEVEL_STYLES.unknown;
+            return LEVEL_STYLES[this.status.level];
         },
         stateColor() {
             return this.stateStyle.color;
@@ -121,11 +71,7 @@ export default {
             return this.stateStyle.icon;
         },
         stateLabel() {
-            const text = this.publicMode ? this.line.text : this.line.lastText;
-            if (text) {
-                return text;
-            }
-            return this.$t(`Line status level.${this.level}`);
+            return this.status.text || this.$t(`Line status level.${this.status.level}`);
         },
         displayPercent() {
             if (this.percent === null) {
@@ -171,7 +117,7 @@ export default {
 
     .line-name {
         font-weight: 600;
-        max-width: 180px;
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -182,7 +128,8 @@ export default {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        flex: 1;
+        flex: 1 0 auto;
+        white-space: nowrap;
     }
 
     .line-percent {

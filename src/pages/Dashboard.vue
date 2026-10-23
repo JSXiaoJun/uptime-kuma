@@ -1,39 +1,66 @@
 <template>
     <div class="container-fluid">
         <div class="row">
-            <div v-if="!$root.isMobile" class="col-12 col-md-5 col-xl-4 ps-0 sidebar">
-                <div class="d-flex gap-2 flex-wrap mb-3">
-                    <router-link to="/add" class="btn btn-primary">
+            <div v-if="!$root.isMobile" class="col-12 col-md-5 col-xl-4 ps-0">
+                <div class="sidebar-header mb-3">
+                    <div class="sidebar-tabs" role="tablist">
+                        <button
+                            id="sidebar-tab-monitors"
+                            type="button"
+                            role="tab"
+                            class="sidebar-tab"
+                            :class="{ active: tab === 'monitors' }"
+                            :aria-selected="tab === 'monitors'"
+                            aria-controls="sidebar-panel-monitors"
+                            @click="tab = 'monitors'"
+                        >
+                            {{ $t("Monitors tab") }}
+                            <span class="tab-count">{{ monitorCount }}</span>
+                        </button>
+                        <button
+                            id="sidebar-tab-lines"
+                            type="button"
+                            role="tab"
+                            class="sidebar-tab"
+                            :class="{ active: tab === 'lines' }"
+                            :aria-selected="tab === 'lines'"
+                            aria-controls="sidebar-panel-lines"
+                            @click="tab = 'lines'"
+                        >
+                            {{ $t("Lines tab") }}
+                            <span class="tab-count">{{ lines.length }}</span>
+                        </button>
+                    </div>
+
+                    <router-link v-if="tab === 'monitors'" to="/add" class="btn btn-primary">
                         <font-awesome-icon icon="plus" />
                         {{ $t("Add New Monitor") }}
                     </router-link>
-
-                    <button class="btn btn-outline-primary" @click="$refs.lineDialog.show()">
-                        <font-awesome-icon icon="network-wired" />
+                    <button v-else type="button" class="btn btn-primary" @click="$refs.lineDialog.show()">
+                        <font-awesome-icon icon="plus" />
                         {{ $t("Add Line") }}
                     </button>
                 </div>
 
-                <!--
-                    The monitor list sizes itself with `calc(100vh - 160px)`,
-                    which fills the viewport and pushes anything after it out of
-                    view (the line cards ended up scrolled inside the monitor
-                    list). Wrapping the list in a flex child that can shrink
-                    keeps both blocks visible.
-                -->
-                <div class="sidebar-stack">
-                    <div class="monitor-slot">
-                        <MonitorList :scrollbar="true" class="sidebar-monitor-box" />
-                    </div>
+                <!-- v-show keeps the monitor list's search and filters when switching tabs -->
+                <div
+                    v-show="tab === 'monitors'"
+                    id="sidebar-panel-monitors"
+                    class="sidebar-panel"
+                    role="tabpanel"
+                    aria-labelledby="sidebar-tab-monitors"
+                >
+                    <MonitorList :scrollbar="true" />
+                </div>
 
-                    <!--
-                        Shown as soon as the list request was attempted (even if
-                        it failed), so the empty state and the "Add Line" entry
-                        inside it stay reachable.
-                    -->
-                    <div v-if="linesLoaded" class="line-slot">
-                        <LineStatusList ref="lineList" @add="$refs.lineDialog.show()" @edit="onEditLine" />
-                    </div>
+                <div
+                    v-if="tab === 'lines'"
+                    id="sidebar-panel-lines"
+                    class="sidebar-panel"
+                    role="tabpanel"
+                    aria-labelledby="sidebar-tab-lines"
+                >
+                    <LineStatusList class="line-tab-box" @add="$refs.lineDialog.show()" @edit="onEditLine" />
                 </div>
             </div>
 
@@ -61,23 +88,20 @@ export default {
     data() {
         return {
             height: 0,
-            // The line block used to be rendered only when the list was
-            // already populated, but LineStatusList is the component that
-            // fetches the list, so it never got a chance to load. Show it once
-            // the request has been attempted instead.
-            linesLoaded: false,
+            tab: "monitors",
         };
     },
     computed: {
         /**
-         * Lines from the admin catalogue, used to decide whether the sidebar
-         * line block should be rendered at all.
-         *
-         * This deliberately reads `lineStatusList` and not the status-page
-         * `allLineStatusList`: the two payloads are shaped differently (admin
-         * rows carry `lastUsagePercent`/`endpoint`, status page rows carry
-         * `usagePercent`/`updatedAt`), and sharing one field made the admin
-         * block render status page data with an empty timestamp.
+         * Top-level monitors, matching what the monitor list shows.
+         * @returns {number} Monitor count
+         */
+        monitorCount() {
+            return Object.values(this.$root.monitorList).filter((monitor) => monitor.parent === null).length;
+        },
+        /**
+         * Lines from the admin catalogue. The socket mixin fetches it after
+         * login and keeps it in sync through the "lineStatusList" event.
          * @returns {object[]} Lines
          */
         lines() {
@@ -87,58 +111,7 @@ export default {
     mounted() {
         this.height = this.$refs.container.offsetHeight;
     },
-    created() {
-        // created() runs after the socket mixin's own created() hook, but the
-        // connection and the login are asynchronous. The server pushes
-        // `lineStatusList` right after authentication, so listen for it and
-        // also ask explicitly in case that push has already happened.
-        this.$root.emitter.on("lineStatusList", this.onLineStatusList);
-        this.fetchLines();
-    },
-    beforeUnmount() {
-        clearTimeout(this.fetchLinesRetry);
-        this.$root.emitter.off("lineStatusList", this.onLineStatusList);
-    },
     methods: {
-        /**
-         * Mark the line block as ready once the server pushed the list.
-         * @returns {void}
-         */
-        onLineStatusList() {
-            this.linesLoaded = true;
-        },
-        /**
-         * Ask the server for the line catalogue.
-         *
-         * The list used to be requested only by LineStatusList's mount hook,
-         * but that component is rendered behind a `v-if` that depended on the
-         * list being non-empty, so on a fresh page load nothing ever asked and
-         * the block stayed hidden.
-         * @returns {void}
-         */
-        fetchLines() {
-            // The socket mixin already pulled the list after login.
-            if (this.$root.lineStatusListLoaded) {
-                this.linesLoaded = true;
-            }
-            const socket = this.$root.getSocket();
-            if (!socket || !socket.connected) {
-                // Retry until the socket and the login are ready.
-                clearTimeout(this.fetchLinesRetry);
-                this.fetchLinesRetry = setTimeout(() => this.fetchLines(), 500);
-                return;
-            }
-            socket.emit("getLineStatusList", (res) => {
-                if (res.ok) {
-                    // Stored locally only; `$root.lineStatusList` is kept in
-                    // sync by the socket "lineStatusList" event.
-                    this.$root.lineStatusList = res.data;
-                }
-                // Render the block even when the request failed, so the
-                // loading/error state and the "Add Line" entry stay reachable.
-                this.linesLoaded = true;
-            });
-        },
         /**
          * Open the dialog pre-filled with an existing line.
          * @param {object} line Line to edit
@@ -152,45 +125,89 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../assets/vars.scss";
+
 .container-fluid {
     width: 98%;
 }
 
-.sidebar {
+.sidebar-header {
     display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 100px);
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
-.sidebar-stack {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    gap: 12px;
+.sidebar-tabs {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 50rem;
+    background-color: rgba(140, 140, 140, 0.12);
+
+    .dark & {
+        background-color: $dark-header-bg;
+    }
 }
 
-.monitor-slot {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
+.sidebar-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 16px;
+    border: 0;
+    border-radius: 50rem;
+    background: transparent;
+    color: inherit;
+    font-size: 0.95em;
+    white-space: nowrap;
+    transition: all ease-in-out 0.15s;
+
+    &:hover {
+        color: $primary;
+    }
+
+    &.active {
+        background-color: #fff;
+        color: $dark-font-color2;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+
+        .dark & {
+            background-color: $dark-bg2;
+            color: $dark-font-color;
+        }
+    }
+
+    &:focus-visible {
+        outline: 2px solid $primary;
+        outline-offset: 1px;
+    }
 }
 
-.line-slot {
-    flex: 0 0 auto;
-    max-height: 45%;
-    overflow-y: auto;
-}
-</style>
+.tab-count {
+    min-width: 22px;
+    padding: 0 6px;
+    border-radius: 50rem;
+    background-color: rgba(140, 140, 140, 0.2);
+    font-size: 0.8em;
+    line-height: 1.6;
+    text-align: center;
 
-<!--
-    MonitorList sizes its root box with calc(100vh - 160px), which fills the
-    viewport and pushes the line cards out of view. The class below is merged
-    onto that root element and constrained here (a plain global rule avoids the
-    ::v-deep / :deep syntax that this project's stylelint config rejects).
--->
-<style lang="scss">
-.monitor-slot .sidebar-monitor-box {
-    height: 100% !important;
-    margin-bottom: 0 !important;
+    .active & {
+        background-color: $primary;
+        color: $dark-font-color2;
+    }
+}
+
+/* The list boxes are position: sticky and need the full-height column as their containing block */
+.sidebar-panel {
+    display: contents;
+}
+
+/* Same size and stickiness as the monitor list box */
+.line-tab-box {
+    height: calc(100vh - 160px);
+    position: sticky;
+    top: 10px;
+    margin-bottom: 1rem;
 }
 </style>

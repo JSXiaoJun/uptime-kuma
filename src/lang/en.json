@@ -1594,5 +1594,7 @@
     "Must return JSON with usage_percent (0-100). See the status-generator example.": "Must return JSON with usage_percent (0-100). See the status-generator example.",
     "Minimum 60 seconds.": "Minimum 60 seconds.",
     "Used for reference only; the endpoint reports the percentage.": "Used for reference only; the endpoint reports the percentage.",
-    "No lines in this group yet.": "No lines in this group yet."
+    "No lines in this group yet.": "No lines in this group yet.",
+    "Monitors tab": "Monitors",
+    "Lines tab": "Lines"
 }

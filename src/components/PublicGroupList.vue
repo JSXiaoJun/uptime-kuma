@@ -43,6 +43,7 @@
                         <Draggable
                             v-model="group.element.monitorList"
                             class="monitor-list"
+                            :class="{ 'no-drop-zone': !editMode && group.element.monitorList.length === 0 }"
                             group="same-group"
                             :disabled="!editMode"
                             :animation="100"
@@ -125,26 +126,14 @@
                                 </div>
                             </template>
                         </Draggable>
-                    </div>
-                </transition>
 
-                <!--
-                    Line status is rendered as a sibling of the monitor box
-                    (not inside it): the monitor list is position:relative
-                    with its own stacking context, and nesting the bars
-                    inside caused them to overlap the monitor rows.
-                    It needs its own <transition>: a transition renders only
-                    its first child, so sharing one dropped this component.
-                -->
-                <transition name="slide-fade-up">
-                    <GroupLines
-                        v-if="!isGroupCollapsed(group.element)"
-                        :group="group.element"
-                        :edit-mode="editMode"
-                        class="shadow-box mt-3"
-                        @add="(line) => addLineToGroup(group.element, line)"
-                        @remove="(lineId) => removeLineFromGroup(group.element, lineId)"
-                    />
+                        <GroupLines
+                            :group="group.element"
+                            :edit-mode="editMode"
+                            @add="(line) => addLineToGroup(group.element, line)"
+                            @remove="(lineId) => removeLineFromGroup(group.element, lineId)"
+                        />
+                    </div>
                 </transition>
             </div>
         </template>
@@ -410,6 +399,10 @@ export default {
 
 .monitor-list {
     min-height: 46px;
+
+    &.no-drop-zone {
+        min-height: 0;
+    }
 }
 
 .item-name {

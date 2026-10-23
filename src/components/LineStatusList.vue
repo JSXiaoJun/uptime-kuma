@@ -1,16 +1,5 @@
 <template>
     <div class="shadow-box line-status-list">
-        <div class="list-header">
-            <h5 class="list-title">
-                <font-awesome-icon icon="network-wired" />
-                {{ $t("Line status") }}
-            </h5>
-            <button class="btn btn-sm btn-primary" :disabled="loading" @click="$emit('add')">
-                <font-awesome-icon icon="plus" />
-                {{ $t("Add Line") }}
-            </button>
-        </div>
-
         <div v-if="loading" class="list-empty">
             <font-awesome-icon icon="spinner" spin />
             {{ $t("Loading...") }}
@@ -22,33 +11,61 @@
             <small class="text-muted">
                 {{ $t("Add a line endpoint such as https://hk1.example.com/status.json") }}
             </small>
+            <div class="mt-3">
+                <button class="btn btn-sm btn-primary" @click="$emit('add')">
+                    <font-awesome-icon icon="plus" />
+                    {{ $t("Add Line") }}
+                </button>
+            </div>
         </div>
 
         <div v-else class="list-body">
-            <div v-for="line in lines" :key="line.id" class="line-row">
-                <LineStatusBar :line="line" :show-meta="true" />
+            <div v-for="line in lines" :key="line.id" class="line-row" :class="{ disabled: !line.enabled }">
+                <LineStatusBar :line="line" />
 
-                <div class="line-actions">
-                    <span class="badge" :class="line.enabled ? 'bg-success' : 'bg-secondary'">
-                        {{ line.enabled ? $t("Enabled") : $t("Disabled") }}
-                    </span>
+                <div class="line-footer">
+                    <div class="line-meta">
+                        <span v-if="line.lastChecked">
+                            {{ $t("Last checked") }}: {{ formatTime(line.lastChecked) }}
+                        </span>
+                        <span v-if="line.endpoint" class="line-endpoint" :title="line.endpoint">
+                            {{ line.endpoint }}
+                        </span>
+                    </div>
 
-                    <button
-                        class="btn btn-sm btn-outline-secondary"
-                        :title="$t('Refresh now')"
-                        :disabled="refreshing[line.id]"
-                        @click="refresh(line)"
-                    >
-                        <font-awesome-icon icon="undo" :spin="refreshing[line.id]" />
-                    </button>
+                    <div class="line-actions">
+                        <span class="badge" :class="line.enabled ? 'bg-success' : 'bg-secondary'">
+                            {{ line.enabled ? $t("Enabled") : $t("Disabled") }}
+                        </span>
 
-                    <button class="btn btn-sm btn-outline-secondary" :title="$t('Edit')" @click="$emit('edit', line)">
-                        <font-awesome-icon icon="pen" />
-                    </button>
+                        <button
+                            class="btn btn-sm btn-outline-secondary"
+                            :title="$t('Refresh now')"
+                            :aria-label="$t('Refresh now')"
+                            :disabled="refreshing[line.id]"
+                            @click="refresh(line)"
+                        >
+                            <font-awesome-icon icon="undo" :spin="refreshing[line.id]" />
+                        </button>
 
-                    <button class="btn btn-sm btn-outline-danger" :title="$t('Delete')" @click="confirmDelete(line)">
-                        <font-awesome-icon icon="trash" />
-                    </button>
+                        <button
+                            class="btn btn-sm btn-outline-secondary"
+                            :title="$t('Edit')"
+                            :aria-label="$t('Edit')"
+                            @click="$emit('edit', line)"
+                        >
+                            <font-awesome-icon icon="pen" />
+                        </button>
+
+                        <button
+                            class="btn btn-sm btn-outline-danger"
+                            :title="$t('Delete')"
+                            :aria-label="$t('Delete')"
+                            @click="confirmDelete(line)"
+                        >
+                            <font-awesome-icon icon="trash" />
+                        </button>
+                    </div>
                 </div>
 
                 <div v-if="line.lastError" class="line-error">
@@ -61,6 +78,7 @@
 </template>
 
 <script>
+import dayjs from "dayjs";
 import LineStatusBar from "./LineStatusBar.vue";
 import { useToast } from "vue-toastification";
 
@@ -91,6 +109,15 @@ export default {
         this.load();
     },
     methods: {
+        /**
+         * Format a datetime in the browser's timezone.
+         * @param {string} value Raw UTC datetime
+         * @returns {string} Formatted time
+         */
+        formatTime(value) {
+            const parsed = dayjs.utc(value);
+            return parsed.isValid() ? parsed.local().format("YYYY-MM-DD HH:mm") : value;
+        },
         /**
          * Ask the server for the current list.
          * @returns {void}
@@ -146,54 +173,76 @@ export default {
 
 <style lang="scss" scoped>
 .line-status-list {
-    margin-bottom: 20px;
-
-    .list-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        border-bottom: 1px solid rgba(140, 140, 140, 0.15);
-    }
-
-    .list-title {
-        margin: 0;
-        font-size: 15px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+    display: flex;
+    flex-direction: column;
+    padding: 0;
 
     .list-empty {
-        padding: 24px 16px;
+        padding: 32px 16px;
         text-align: center;
         opacity: 0.75;
         font-size: 14px;
     }
 
-    .line-row {
-        position: relative;
-        padding: 4px 16px 8px;
-        border-bottom: 1px solid rgba(140, 140, 140, 0.1);
+    .list-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 8px;
+    }
 
-        &:last-child {
-            border-bottom: none;
+    .line-row {
+        padding: 6px 4px 10px;
+        border-radius: 10px;
+        transition: background-color ease-in-out 0.15s;
+
+        & + .line-row {
+            margin-top: 4px;
         }
+
+        &:hover {
+            background-color: rgba(140, 140, 140, 0.08);
+        }
+
+        &.disabled {
+            opacity: 0.55;
+        }
+    }
+
+    .line-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 0 12px;
+    }
+
+    .line-meta {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        font-size: 12px;
+        opacity: 0.7;
+    }
+
+    .line-endpoint {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .line-actions {
         display: flex;
         align-items: center;
+        flex-shrink: 0;
         gap: 6px;
-        padding-left: 12px;
-        margin-top: -28px;
-        justify-content: flex-end;
     }
 
     .line-error {
         font-size: 12px;
         color: #ef4444;
-        margin-top: 4px;
+        margin-top: 6px;
+        padding: 0 12px;
         display: flex;
         align-items: center;
         gap: 4px;

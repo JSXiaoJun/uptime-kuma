@@ -1,22 +1,49 @@
 <template>
-    <div class="line-status-box" :class="{ 'line-status-box--edit': editMode }">
-        <!-- Existing lines -->
-        <div v-if="lines.length > 0" class="line-status-block">
-            <div v-for="line in lines" :key="'line-' + line.id" class="line-row">
-                <font-awesome-icon
-                    v-if="editMode"
-                    icon="times"
-                    class="action remove me-2"
-                    :title="$t('Remove')"
-                    @click="$emit('remove', Number(line.id))"
-                />
-                <LineStatusBar :line="line" />
+    <div class="group-lines">
+        <!-- Same row layout as the monitor rows; the right column is a load bar instead of heartbeats -->
+        <div v-for="line in rows" :key="'line-' + line.id" class="item" data-testid="line">
+            <div class="row">
+                <div class="col-9 col-xl-6 small-padding">
+                    <div class="info">
+                        <font-awesome-icon
+                            v-if="editMode"
+                            icon="times"
+                            class="action remove me-3"
+                            :title="$t('Remove')"
+                            @click="$emit('remove', Number(line.id))"
+                        />
+                        <span
+                            class="badge rounded-pill line-pill"
+                            :style="{ backgroundColor: line.color }"
+                            :title="line.label"
+                        >
+                            {{ line.percentText }}
+                        </span>
+                        <p class="item-name" :title="line.name">{{ line.name }}</p>
+                    </div>
+                </div>
+                <div class="col-3 col-xl-6">
+                    <div
+                        class="load-bar"
+                        :class="{ 'load-bar--unknown': line.percent === null }"
+                        role="progressbar"
+                        :aria-label="line.name"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        :aria-valuenow="line.percent ?? undefined"
+                        :aria-valuetext="`${line.percentText} ${line.label}`"
+                    >
+                        <div class="load-bar-fill" :style="{ width: line.barWidth, backgroundColor: line.color }"></div>
+                    </div>
+                    <div v-if="!$root.isMobile" class="load-bar-word">
+                        <span :style="{ color: line.color }">
+                            <font-awesome-icon :icon="line.icon" />
+                            {{ line.label }}
+                        </span>
+                        <span v-if="line.updatedAt">{{ timeAgo(line.updatedAt) }}</span>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <!-- Empty hint in edit mode -->
-        <div v-else-if="editMode" class="line-status-empty">
-            {{ $t("No lines in this group yet.") }}
         </div>
 
         <!-- Picker -->
@@ -27,16 +54,19 @@
                     {{ opt.displayName || opt.name }}
                 </option>
             </select>
-            <small v-else class="text-muted">
+            <small v-else-if="catalogueLoaded && catalogue.length === 0" class="text-muted">
                 {{ $t("No line status configured yet.") }}
-                <a href="/dashboard" target="_blank" rel="noopener noreferrer">{{ $t("Add a line in the dashboard") }}</a>
+                <a href="/dashboard" target="_blank" rel="noopener noreferrer">
+                    {{ $t("Add a line in the dashboard") }}
+                </a>
             </small>
         </div>
     </div>
 </template>
 
 <script>
-import LineStatusBar from "./LineStatusBar.vue";
+import dayjs from "dayjs";
+import { LEVEL_STYLES, readLineStatus } from "../line-status.js";
 
 /**
  * Renders (and, in edit mode, edits) the relay lines attached to a status page
@@ -52,9 +82,6 @@ import LineStatusBar from "./LineStatusBar.vue";
  */
 export default {
     name: "GroupLines",
-    components: {
-        LineStatusBar,
-    },
     props: {
         /** The group object from publicGroupList */
         group: {
@@ -72,6 +99,8 @@ export default {
         return {
             // Full catalogue of configured lines
             catalogue: [],
+            // Whether the catalogue request has succeeded at least once
+            catalogueLoaded: false,
             // How many times we have retried fetching the catalogue
             retries: 0,
         };
@@ -84,6 +113,27 @@ export default {
         lines() {
             const list = this.group && this.group.lineList;
             return Array.isArray(list) ? list : [];
+        },
+        /**
+         * Assigned lines with their display values resolved.
+         * @returns {object[]} Rows to render
+         */
+        rows() {
+            return this.lines.map((line) => {
+                const status = readLineStatus(line);
+                const style = LEVEL_STYLES[status.level];
+                return {
+                    id: line.id,
+                    name: line.displayName || line.name,
+                    percent: status.percent,
+                    percentText: status.percent === null ? "--%" : `${status.percent}%`,
+                    barWidth: status.percent === null ? "0%" : `${Math.max(2, status.percent)}%`,
+                    label: status.text || this.$t(`Line status level.${status.level}`),
+                    color: style.color,
+                    icon: style.icon,
+                    updatedAt: status.updatedAt,
+                };
+            });
         },
         /**
          * Lines that can still be added to this group.
@@ -106,6 +156,20 @@ export default {
     },
     methods: {
         /**
+         * Relative time in the same wording as the heartbeat bar ("now", "3m ago").
+         * @param {string} value UTC datetime
+         * @returns {string} Relative time
+         */
+        timeAgo(value) {
+            const seconds = dayjs().diff(dayjs.utc(value), "seconds");
+            if (seconds < 60 * 2) {
+                return this.$t("now");
+            } else if (seconds < 60 * 60) {
+                return this.$t("time ago", [(seconds / 60).toFixed(0) + "m"]);
+            }
+            return this.$t("time ago", [(seconds / 60 / 60).toFixed(0) + "h"]);
+        },
+        /**
          * Ask the server for the line catalogue, retrying while the socket is
          * still connecting (entering edit mode initialises it asynchronously).
          * @returns {void}
@@ -124,6 +188,7 @@ export default {
                 if (res && res.ok && Array.isArray(res.data)) {
                     // Only enabled lines can be attached to a status page.
                     this.catalogue = res.data.filter((line) => line.enabled !== false);
+                    this.catalogueLoaded = true;
                     this.retries = 0;
                 } else if (this.retries < 40) {
                     this.retries++;
@@ -162,26 +227,60 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.line-status-box {
-    padding: 4px 0;
+@import "../assets/vars.scss";
+
+.item-name {
+    padding-left: 5px;
+    padding-right: 5px;
+    margin: 0;
+    display: inline-block;
 }
 
-.line-status-block {
-    padding: 4px 12px;
+.remove {
+    color: $danger;
+    cursor: pointer;
+}
 
-    .line-row + .line-row {
-        border-top: 1px solid rgba(140, 140, 140, 0.1);
+.line-pill {
+    color: #fff;
+}
+
+/* Height and vertical position match the "mid" heartbeat bar next to it */
+.load-bar {
+    height: 16px;
+    margin-top: 4px;
+    border-radius: 50rem;
+    background-color: #f0f8ff;
+    overflow: hidden;
+
+    .dark & {
+        background-color: #848484;
+    }
+
+    &--unknown {
+        opacity: 0.4;
     }
 }
 
-.line-status-empty {
-    padding: 12px;
-    font-size: 13px;
-    opacity: 0.6;
+.load-bar-fill {
+    height: 100%;
+    border-radius: 50rem;
+    transition:
+        width 0.6s ease,
+        background-color 0.3s ease;
+}
+
+.load-bar-word {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: $secondary-text;
+    font-size: 12px;
+    white-space: nowrap;
 }
 
 .add-line-row {
-    padding: 10px 12px;
+    padding: 10px 15px;
     border-top: 1px solid rgba(140, 140, 140, 0.1);
 }
 </style>
