@@ -30,7 +30,7 @@
 
 <script>
 import GroupIcon from "./GroupIcon.vue";
-import { GROUP_ICON_KEYS, getGroupIconLabel } from "../group-icons.js";
+import { GROUP_ICON_KEYS, getGroupIcon } from "../group-icons.js";
 
 export default {
     name: "GroupIconPicker",
@@ -56,7 +56,8 @@ export default {
     },
     methods: {
         label(key) {
-            return getGroupIconLabel(key);
+            const icon = getGroupIcon(key);
+            return icon.labelKey ? this.$t(icon.labelKey) : icon.label;
         },
         select(key) {
             this.$emit("update:modelValue", key);

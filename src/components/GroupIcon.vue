@@ -15,6 +15,9 @@
             :key="index"
             :d="path.d"
             :fill="path.fill || definition.color || 'currentColor'"
+            :stroke="definition.strokeWidth ? 'currentColor' : 'none'"
+            :stroke-width="definition.strokeWidth || 0"
+            stroke-linejoin="round"
         />
     </svg>
 </template>
