@@ -14,6 +14,10 @@
                             <label for="draftGroupName" class="form-label">{{ $t("Group Name") }}</label>
                             <input id="draftGroupName" v-model="groupName" type="text" class="form-control" />
                         </div>
+                        <div class="mt-3">
+                            <label class="form-label">{{ $t("Group Icon") }}</label>
+                            <GroupIconPicker v-model="icon" />
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -37,13 +41,18 @@
 
 <script>
 import { Modal } from "bootstrap";
+import GroupIconPicker from "./GroupIconPicker.vue";
 
 export default {
+    components: {
+        GroupIconPicker,
+    },
     props: {},
     emits: ["added"],
     data: () => ({
         modal: null,
         groupName: null,
+        icon: "openai",
     }),
     mounted() {
         this.modal = new Modal(this.$refs.modal);
@@ -57,6 +66,8 @@ export default {
          * @returns {void}
          */
         show() {
+            this.groupName = null;
+            this.icon = "openai";
             this.modal.show();
         },
         /**
@@ -64,7 +75,7 @@ export default {
          * @returns {void}
          */
         confirm() {
-            this.$emit("added", this.groupName);
+            this.$emit("added", this.groupName, this.icon);
             this.modal.hide();
         },
         /**

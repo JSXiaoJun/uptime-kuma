@@ -145,6 +145,7 @@ class Monitor extends BeanModel {
             forceInactive: preloadData.forceInactive.get(this.id),
             type: this.type,
             subtype: this.subtype,
+            icon: this.icon,
             timeout: this.timeout,
             interval: this.interval,
             retryInterval: this.retryInterval,

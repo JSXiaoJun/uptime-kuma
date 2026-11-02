@@ -36,7 +36,16 @@
                                 />
                             </span>
                             <div class="flex-fill text-truncate" style="min-width: 0">
-                                <div class="text-truncate">{{ monitor.name }}</div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <GroupIcon
+                                        v-if="monitor.type === 'group'"
+                                        :icon="monitor.icon || 'other'"
+                                        :size="18"
+                                    />
+                                    <span class="text-truncate flex-grow-1" style="min-width: 0">
+                                        {{ monitor.name }}
+                                    </span>
+                                </div>
                                 <div v-if="monitor.tags.length > 0" class="tags gap-1">
                                     <Tag
                                         v-for="tag in monitor.tags"
@@ -87,6 +96,7 @@
 
 <script>
 import HeartbeatBar from "../components/HeartbeatBar.vue";
+import GroupIcon from "../components/GroupIcon.vue";
 import Tag from "../components/Tag.vue";
 import Uptime from "../components/Uptime.vue";
 import { getMonitorRelativeURL } from "../util.ts";
@@ -96,6 +106,7 @@ export default {
     components: {
         Uptime,
         HeartbeatBar,
+        GroupIcon,
         Tag,
     },
     props: {

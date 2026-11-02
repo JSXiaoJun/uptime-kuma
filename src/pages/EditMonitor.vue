@@ -2047,6 +2047,12 @@
                                 />
                             </div>
 
+                            <!-- Group Icon -->
+                            <div v-if="monitor.type === 'group'" class="my-3">
+                                <label class="form-label">{{ $t("Group Icon") }}</label>
+                                <GroupIconPicker v-model="monitor.icon" />
+                            </div>
+
                             <!-- Description -->
                             <div class="my-3">
                                 <label for="description" class="form-label">{{ $t("Description") }}</label>
@@ -3103,6 +3109,7 @@ import { useToast } from "vue-toastification";
 import ActionSelect from "../components/ActionSelect.vue";
 import CopyableInput from "../components/CopyableInput.vue";
 import CreateGroupDialog from "../components/CreateGroupDialog.vue";
+import GroupIconPicker from "../components/GroupIconPicker.vue";
 import Confirm from "../components/Confirm.vue";
 import NotificationDialog from "../components/NotificationDialog.vue";
 import DockerHostDialog from "../components/DockerHostDialog.vue";
@@ -3141,6 +3148,7 @@ const monitorDefaults = {
     type: "http",
     name: "",
     parent: null,
+    icon: null,
     url: defaultValueList.http.url,
     wsSubprotocol: "",
     method: "GET",
@@ -3205,6 +3213,7 @@ export default {
         ProxyDialog,
         CopyableInput,
         CreateGroupDialog,
+        GroupIconPicker,
         Confirm,
         NotificationDialog,
         DockerHostDialog,
@@ -3241,6 +3250,7 @@ export default {
                 mongodb: "mongodb://username:password@host:port/database",
             },
             draftGroupName: null,
+            draftGroupIcon: "openai",
             remoteBrowsersEnabled: false,
             lowIntervalConfirmation: {
                 confirmed: false,
@@ -4161,6 +4171,7 @@ message HealthCheckResponse {
                             ...monitorDefaults,
                             type: "group",
                             name: this.draftGroupName,
+                            icon: this.draftGroupIcon,
                             interval: this.monitor.interval,
                             active: false,
                         },
@@ -4249,10 +4260,12 @@ message HealthCheckResponse {
         /**
          * Adds a draft group.
          * @param {string} draftGroupName The name of the draft group.
+         * @param {string} draftGroupIcon The icon key of the draft group.
          * @returns {void}
          */
-        addedDraftGroup(draftGroupName) {
+        addedDraftGroup(draftGroupName, draftGroupIcon) {
             this.draftGroupName = draftGroupName;
+            this.draftGroupIcon = draftGroupIcon || "openai";
             this.monitor.parent = -1;
         },
 

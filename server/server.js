@@ -786,6 +786,12 @@ let needSetup = false;
                 }
                 bean.user_id = socket.userID;
 
+                // Icon is a bundled icon key, only meaningful for groups.
+                bean.icon = monitor.type === "group" ? (monitor.icon ?? null) : null;
+                if (bean.icon !== null && (typeof bean.icon !== "string" || bean.icon.length > 64)) {
+                    throw new Error("Invalid group icon");
+                }
+
                 bean.validate();
 
                 await R.store(bean);
@@ -851,6 +857,10 @@ let needSetup = false;
                 bean.parent = monitor.parent;
                 bean.type = monitor.type;
                 bean.subtype = monitor.subtype;
+                bean.icon = monitor.type === "group" ? (monitor.icon ?? null) : null;
+                if (bean.icon !== null && (typeof bean.icon !== "string" || bean.icon.length > 64)) {
+                    throw new Error("Invalid group icon");
+                }
                 bean.url = monitor.url;
                 bean.wsIgnoreSecWebsocketAcceptHeader = monitor.wsIgnoreSecWebsocketAcceptHeader;
                 bean.wsSubprotocol = monitor.wsSubprotocol;

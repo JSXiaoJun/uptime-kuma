@@ -45,6 +45,12 @@
                         {{ $t("Dashboard") }}
                     </router-link>
                 </li>
+                <li v-if="$root.loggedIn" class="nav-item me-2">
+                    <router-link to="/groups" class="nav-link">
+                        <font-awesome-icon icon="folder" />
+                        {{ $t("Groups") }}
+                    </router-link>
+                </li>
                 <li v-if="$root.loggedIn" class="nav-item">
                     <div class="dropdown dropdown-profile-pic">
                         <div class="nav-link" data-bs-toggle="dropdown">
@@ -146,6 +152,11 @@
             <router-link to="/add" class="nav-link">
                 <div><font-awesome-icon icon="plus" /></div>
                 {{ $t("Add") }}
+            </router-link>
+
+            <router-link to="/groups" class="nav-link">
+                <div><font-awesome-icon icon="folder" /></div>
+                {{ $t("Groups") }}
             </router-link>
 
             <router-link to="/settings" class="nav-link">
@@ -277,7 +288,7 @@ export default {
 
     a {
         text-align: center;
-        width: 25%;
+        width: 20%;
         display: inline-block;
         height: 100%;
         padding: 8px 10px 0;
