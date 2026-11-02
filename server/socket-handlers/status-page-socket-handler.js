@@ -367,6 +367,10 @@ module.exports.statusPageSocketHandler = (socket) => {
 
                 groupBean.status_page_id = statusPage.id;
                 groupBean.name = group.name;
+                groupBean.icon = group.icon ?? null;
+                if (groupBean.icon !== null && (typeof groupBean.icon !== "string" || groupBean.icon.length > 64)) {
+                    throw new Error("Invalid group icon");
+                }
                 groupBean.public = true;
                 groupBean.weight = groupOrder++;
 

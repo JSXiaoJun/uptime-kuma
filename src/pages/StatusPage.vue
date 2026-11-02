@@ -1260,6 +1260,7 @@ export default {
 
             this.$root.publicGroupList.unshift({
                 name: groupName,
+                icon: "other",
                 monitorList: [],
             });
         },

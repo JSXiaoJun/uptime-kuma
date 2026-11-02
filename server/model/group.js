@@ -21,6 +21,7 @@ class Group extends BeanModel {
         return {
             id: this.id,
             name: this.name,
+            icon: this.icon,
             weight: this.weight,
             monitorList,
         };

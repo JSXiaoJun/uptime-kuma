@@ -12,25 +12,39 @@
                         class="action remove me-3"
                         @click="removeGroup(group.index)"
                     />
-                    <span class="collapse-toggle" @click="toggleGroup(group.element)">
-                        <font-awesome-icon
-                            icon="chevron-down"
-                            class="chevron me-2"
-                            :class="{ collapsed: isGroupCollapsed(group.element) }"
-                        />
-                    </span>
+                    <font-awesome-icon icon="chevron-down" class="chevron me-2" />
+                    <GroupIcon :icon="group.element.icon || 'other'" :size="26" class="me-2" />
                     <Editable
                         v-model="group.element.name"
                         :contenteditable="editMode"
                         tag="span"
-                        :class="{ 'collapse-toggle': !editMode }"
                         data-testid="group-name"
-                        @click="!editMode && toggleGroup(group.element)"
                     />
+                    <button
+                        v-if="editMode"
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary group-icon-button ms-2"
+                        :aria-label="$t('Group Icon')"
+                        :title="$t('Group Icon')"
+                        data-testid="group-icon-button"
+                        @mousedown.stop
+                        @click.stop="toggleIconPicker(group.element)"
+                    >
+                        <font-awesome-icon icon="cog" />
+                    </button>
                 </h2>
 
+                <div
+                    v-if="editMode && isIconPickerOpen(group.element)"
+                    class="group-icon-editor mb-3"
+                    @mousedown.stop
+                >
+                    <div class="text-muted small mb-2">{{ $t("Group Icon") }}</div>
+                    <GroupIconPicker v-model="group.element.icon" />
+                </div>
+
                 <transition name="slide-fade-up">
-                    <div v-if="!isGroupCollapsed(group.element)" class="shadow-box monitor-list mt-4 position-relative">
+                    <div class="shadow-box monitor-list mt-4 position-relative">
                         <div
                             v-if="group.element.monitorList.length === 0 && lineListOf(group.element).length === 0"
                             class="text-center no-monitor-msg"
@@ -145,6 +159,8 @@
 import MonitorSettingDialog from "./MonitorSettingDialog.vue";
 import Draggable from "vuedraggable";
 import HeartbeatBar from "./HeartbeatBar.vue";
+import GroupIcon from "./GroupIcon.vue";
+import GroupIconPicker from "./GroupIconPicker.vue";
 import Uptime from "./Uptime.vue";
 import Tag from "./Tag.vue";
 import Status from "./Status.vue";
@@ -155,6 +171,8 @@ export default {
         MonitorSettingDialog,
         Draggable,
         HeartbeatBar,
+        GroupIcon,
+        GroupIconPicker,
         Uptime,
         Tag,
         Status,
@@ -180,7 +198,9 @@ export default {
         },
     },
     data() {
-        return {};
+        return {
+            openIconPickerId: null,
+        };
     },
     computed: {
         showGroupDrag() {
@@ -232,56 +252,22 @@ export default {
             group.lineList = group.lineList.filter((line) => Number(line.id) !== Number(lineId));
         },
         /**
-         * Toggle collapsed state for a group
-         * @param {object} group Group to toggle
+         * Toggle the icon picker for a status-page group.
+         * @param {object} group Group to edit
          * @returns {void}
          */
-        toggleGroup(group) {
-            if (!this.$router) {
-                return;
-            }
-
+        toggleIconPicker(group) {
             const groupId = this.getGroupIdentifier(group);
-            const collapsed = this.getCollapsedList();
-            const index = collapsed.indexOf(groupId);
-
-            if (index >= 0) {
-                collapsed.splice(index, 1);
-            } else {
-                collapsed.push(groupId);
-            }
-
-            const query = { ...this.$route.query };
-            if (collapsed.length > 0) {
-                query.collapse = collapsed;
-            } else {
-                delete query.collapse;
-            }
-
-            this.$router.push({ query }).catch(() => {});
+            this.openIconPickerId = this.openIconPickerId === groupId ? null : groupId;
         },
 
         /**
-         * Check if a group is collapsed
+         * Check whether the icon picker is open for a group.
          * @param {object} group Group to check
-         * @returns {boolean} Whether the group is collapsed
+         * @returns {boolean} Whether the picker is open
          */
-        isGroupCollapsed(group) {
-            return this.getCollapsedList().includes(this.getGroupIdentifier(group));
-        },
-
-        /**
-         * Get list of collapsed group identifiers from the query param.
-         * Vue Router normalises repeated params (?collapse=1&collapse=2) into an array.
-         * @returns {string[]} Collapsed group identifiers
-         */
-        getCollapsedList() {
-            const raw = this.$route.query.collapse;
-            if (!raw) {
-                return [];
-            }
-            // Normalise to array: a single query param is a string, repeated params are already an array
-            return [].concat(raw);
+        isIconPickerOpen(group) {
+            return this.openIconPickerId === this.getGroupIdentifier(group);
         },
 
         /**
@@ -438,26 +424,19 @@ export default {
     color: $danger;
 }
 
-.group-title {
-    span {
-        display: inline-block;
-        min-width: 15px;
-    }
+.group-icon-button {
+    vertical-align: middle;
 }
 
-.collapse-toggle {
-    cursor: pointer;
-    padding: 2px;
+.group-icon-editor {
+    padding: 0.75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
 }
 
 .chevron {
     font-size: 0.8em;
     color: #bbb;
-    transition: all 0.2s $easing-in;
-
-    &.collapsed {
-        transform: rotate(-90deg);
-    }
 }
 
 .mobile {
